@@ -1,1 +1,31 @@
-Implemented comprehensive anomaly scenario including threat model, simulation scripts, attack vectors, and AI-based detection logic
+feature: Add comprehensive anomaly scenario package including vulnerability research, simulation codebase, AI-defense preparation and technical documentation
+
+This commit introduces the full Anomaly Scenario (Anomali Senaryosu) developed as part of our Cybersecurity Simulation & AI-Driven Defense project. The scope of this commit covers all three major phases of the project: identifying vulnerabilities, simulating attacks, and preparing the initial structure for AI-based threat mitigation. Details include:
+
+1. Vulnerability Identification (Açıkların Tespiti)
+   - Added academic research notes documenting 11 critical security vulnerabilities.
+   - Included formal descriptions, threat levels, exploitation feasibility, and risk scores.
+   - Added anomaly-based attack scenario (Scenario-01) including background, purpose, and expected behavior.
+   - Provided technical explanations for MITM, RFID cloning, spoofing vectors, packet manipulation and session hijacking concepts.
+
+2. Attack Simulation (Saldırıların Simülasyonu)
+   - Implemented full simulation scripts for the anomaly scenario.
+   - Added MITM simulation code (Python/Scapy) for ARP poisoning, packet capture, protocol manipulation and credential interception.
+   - Added RFID cloning demonstration script and documentation for virtual test environment.
+   - Built a virtual test network (Sanal Ağ) including Virtual Device, Virtual Station and Main Server interaction layers.
+   - Added network logs, timestamps, anomaly outputs, and packet traces for training and analysis.
+   - Included technical flow diagrams explaining the behavior of the attacker, tools used, packets altered, and system response.
+
+3. Defense Modeling (Saldırıların Savunulması)
+   - Added preprocessing pipeline for AI model training.
+   - Implemented data cleaning, log normalization, feature extraction and labeling scripts.
+   - Integrated initial detection logic designed to reach 95%+ anomaly detection accuracy.
+   - Created modular AI-defense architecture folder to be expanded in future commits.
+
+4. Documentation & Presentation Files
+   - Added full Turkish presentation draft for YouTube video usage.
+   - Added professional-level explanation of threat modeling and AI-defense logic.
+   - Included README updates summarizing project goals, scenario steps, and simulation instructions.
+   - Added diagrams, tables, and visuals related to cyberattack lifecycle.
+
+This commit finalizes the first complete version of the Anomaly Scenario, enabling team members to run simulations, generate datasets, observe model behavior, and contribute to the next stages of the AI-based defense model. More enhancements will follow in subsequent commits.
