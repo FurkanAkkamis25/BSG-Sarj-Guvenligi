@@ -27,10 +27,13 @@ class CSMSChargePoint(OcppChargePoint):
         connection: WebSocketServerProtocol,
         event_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
         meter_log_callback: Optional[Callable[[str, int, Any], None]] = None,
+        
     ) -> None:
         super().__init__(charge_point_id, connection)
         self.event_callback = event_callback
         self.meter_log_callback = meter_log_callback
+        self._next_tx_id = 1
+
 
     def _fire_event(self, name: str, payload: Dict[str, Any]) -> None:
         """İsteğe bağlı event callback'i çağırmak için yardımcı fonksiyon."""
@@ -111,8 +114,10 @@ class CSMSChargePoint(OcppChargePoint):
         timestamp: str,
         **kwargs,
     ):
-        # Örnek olarak transactionId = 1 veriyoruz.
-        tx_id = 1
+        # Her yeni oturumda artan transaction id
+        tx_id = self._next_tx_id
+        self._next_tx_id += 1
+
         logger.info(
             "[CSMS] StartTransaction from %s | connector=%s id_tag=%s "
             "tx_id=%s meter_start=%s",
