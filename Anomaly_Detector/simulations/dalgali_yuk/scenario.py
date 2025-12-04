@@ -1,143 +1,154 @@
-# simulations/dalgalı_yuk/scenario.py
-
-from __future__ import annotations
-
+# simulations/dalgali_yuk/scenario.py
 import asyncio
 import math
-from typing import List, Dict, Any
+import random
+from dataclasses import dataclass
 
 from simulations.base.scenario_base import ScenarioBase, ScenarioConfig
 from core.charge_point import SimulatedChargePoint
 
 
+@dataclass
+class DalgaliYukScenarioConfig(ScenarioConfig):
+    """
+    Dalgalı Yük Senaryosu için ek ayarlar gerekiyorsa buraya eklenebilir.
+    Şimdilik ScenarioConfig ile aynı.
+    """
+    pass
+
+
 class DalgaliYukScenario(ScenarioBase):
     """
-    Dalgalı Yük Saldırısı Senaryosu
+    Dalgalı Yük Saldırısı (Oscillatory Load Attack) senaryosu.
 
-    Normal mod:
-        - Güç sabit ~7 kW civarı (ufak noise olabilir)
-
-    Attack mod:
-        - Güç 7 kW etrafında sinüs dalgalı osilasyon yapar
-        - Ani yük dalgalanmaları ile şebekeyi gereksiz zorlar
+    - mode="normal"  -> tüm MeterValues normal yük profili
+    - mode="attack"  -> tüm MeterValues dalgalı/osilasyonlu yük profili
+    (İstersen ileride yarısını normal yarısını attack yapacak şekilde genişletebiliriz.)
     """
 
     async def run_for_all_charge_points(
         self,
-        cps: List[SimulatedChargePoint],
+        cps: list[SimulatedChargePoint],
         mode: str,
         duration: int,
     ) -> None:
         """
-        Tüm charge point'ler için:
-          1) Authorize
-          2) StartTransaction
-          3) duration boyunca periyodik MeterValues
-          4) StopTransaction
-        """
-        # 1) Authorize + StartTransaction
-        tx_ids: Dict[str, int] = {}
+        Burada senaryonun ana akışını tanımlıyoruz:
 
-        for cp in cps:
-            # Kimlik doğrulama
-            await cp.send_authorize("TAG123")
+        1. Her CP için:
+            - Authorize (RFID/kullanıcı kimliği)
+            - StartTransaction
+        2. duration boyunca periyodik MeterValues gönder
+            - normal modda düzgün yük
+            - attack modda dalgalı yük
+        3. En sonunda StopTransaction
+        """
+        connector_id = 1
+
+        # 1) Her CP için Authorize + StartTransaction
+        tx_ids: dict[str, int] = {}
+        for idx, cp in enumerate(cps, start=1):
+            id_tag = f"TAG_NORMAL_{idx:03d}"
+
+            # Kimlik doğrulama (ileride kimlik hırsızlığı senaryosunda burayı manipüle edeceğiz)
+            await cp.send_authorize(id_tag)
 
             # Şarj oturumu başlat
-            res = await cp.send_start_transaction(
-                connector_id=1,
-                id_tag="TAG123",
+            start_res = await cp.send_start_transaction(
+                connector_id=connector_id,
+                id_tag=id_tag,
                 meter_start=0,
             )
-            tx_ids[cp.id] = res.transaction_id
+            tx_ids[cp.id] = start_res.transaction_id
 
-        # 2) duration boyunca MeterValues gönder
-        # duration "adım" gibi düşünülebilir, her adımda tüm CP'ler data yollar
-        base_power_kw = 7.0          # normal şarj gücü
-        attack_amp_kw = 3.0          # salınım genliği (attack modunda)
-        sleep_seconds = 0.5          # adımlar arası bekleme
+        # 2) MeterValues döngüsü
+        base_power_kw = 7.0      # ortalama şarj gücü
+        attack_delta_kw = 3.0    # saldırı dalgalanma genliği
+        voltage_v = 400.0        # trifaze varsayım
 
-        for step in range(duration):
-            for idx, cp in enumerate(cps):
-                # Her CP için küçük faz farkı verelim ki dalgalar tam aynı olmasın
-                phase_shift = idx * math.pi / 4
-
+        for step in range(1, duration + 1):
+            for cp in cps:
+                # Normal yük profili
                 if mode == "normal":
-                    # Normal modda sabite yakın değer (istersen noise ekleyebilirsin)
-                    power_kw = base_power_kw
-                else:
-                    # Attack mod: sinüs dalgalı yük
-                    # step / 2: dalgalanmanın hızını ayarlıyor
-                    power_kw = base_power_kw + attack_amp_kw * math.sin(
-                        (step / 2.0) + phase_shift
-                    )
+                    # etrafında hafif oynayan sabit güç
+                    noise = random.uniform(-0.4, 0.4)
+                    power_kw = base_power_kw + noise
 
-                # Basitçe: P = V * I  →  I ≈ P * k sabit alıyoruz
-                # Burası tamamen senaryonun soyut modeli, gerçek fizik değil
-                current_a = power_kw * 4.5
-                voltage_v = 380.0
+                # Dalgalı Yük Saldırısı
+                else:  # mode == "attack"
+                    # basit sinüs tabanlı osilasyon
+                    # step'i saniye gibi düşün: f = 0.25 Hz => 4 sn’de bir tam tur
+                    freq_hz = 0.25
+                    angle = 2 * math.pi * freq_hz * step
+                    osc = math.sin(angle)
 
+                    power_kw = base_power_kw + attack_delta_kw * osc
+                    # biraz rastgelelik ekle
+                    power_kw += random.uniform(-0.5, 0.5)
+                    # negatif olmasın
+                    power_kw = max(power_kw, 0.1)
+
+                current_a = (power_kw * 1000) / voltage_v
+
+                tx_id = tx_ids.get(cp.id)
                 await cp.send_meter_values(
-                    connector_id=1,
+                    connector_id=connector_id,
                     power_kw=power_kw,
                     current_a=current_a,
                     voltage_v=voltage_v,
-                    transaction_id=tx_ids[cp.id],
+                    transaction_id=tx_id,
                 )
 
-            # Bir sonraki adıma geçmeden önce biraz bekle
-            await asyncio.sleep(sleep_seconds)
+            # her adım arasında küçük gecikme
+            await asyncio.sleep(0.2)
 
         # 3) StopTransaction
         for cp in cps:
-            await cp.send_stop_transaction(
-                transaction_id=tx_ids[cp.id],
-                meter_stop=100,
-            )
+            tx_id = tx_ids.get(cp.id)
+            if tx_id is not None:
+                await cp.send_stop_transaction(
+                    transaction_id=tx_id,
+                    meter_stop=0,
+                )
 
     # ------------------------------------------------------------------
-    # Label mantığı
+    # Labellama (anomali etiketi)
     # ------------------------------------------------------------------
-    def get_label_for_event(self, event: Dict[str, Any], mode: str) -> str:
+    def get_label_for_event(self, event: dict, mode: str) -> str:
         """
-        Normal mod:
-            - tüm event'ler: "normal"
-
-        Attack mod:
-            - MeterValues: "oscillatory_load_attack"
-            - diğer OCPP mesajları (Boot, Authorize, Start/Stop, vs.): "attack_meta"
+        Bu senaryoda:
+        - normal modda tüm olaylar "normal"
+        - attack modda:
+            - MeterValues için: "oscillatory_load_attack"
+            - Diğer olaylar için: "attack_meta" (başlangıç/bitiş vs.)
         """
-        message_type = event.get("message_type")
-
         if mode == "normal":
             return "normal"
 
         # mode == "attack"
-        if message_type == "MeterValues":
+        if event.get("message_type") == "MeterValues":
             return "oscillatory_load_attack"
-        else:
-            return "attack_meta"
+
+        return "attack_meta"
 
 
 # ----------------------------------------------------------------------
-# run_simulation.py için GİRİŞ NOKTASI
+# run_simulation.py'nin çağırdığı fonksiyon
 # ----------------------------------------------------------------------
 async def run_scenario(
     mode: str,
     duration: int,
     stations: int,
     output_path: str,
-) -> None:
+):
     """
-    run_simulation.py tarafından çağrılan ortak giriş noktası.
+    run_simulation.py bu fonksiyonu çağırıyor.
 
-    Burada:
-        - Senaryo nesnesi oluşturulur
-        - ScenarioBase.run(...) çalıştırılır
+    Örnek:
+        python run_simulation.py --scenario dalgali_yuk --mode attack --duration 120 --stations 2
     """
-    scenario = DalgaliYukScenario(
-        ScenarioConfig(name="dalgali_yuk")
-    )
-
+    config = DalgaliYukScenarioConfig(name="dalgali_yuk")
+    scenario = DalgaliYukScenario(config)
     await scenario.run(
         mode=mode,
         duration=duration,
