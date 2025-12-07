@@ -1,81 +1,178 @@
 # core/charge_point.py
+
 import asyncio
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 
 import websockets
+from websockets.client import WebSocketClientProtocol
+
 from ocpp.v16 import ChargePoint as CpBase
 from ocpp.v16 import call, call_result
 from ocpp.v16.enums import RegistrationStatus
-from datetime import datetime, timezone
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def _utc_now_iso() -> str:
+    """
+    OCPP mesajları için UTC ISO-8601 timestamp üretir (microsecond'suz).
+    """
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
 class SimulatedChargePoint(CpBase):
     """
-    OCPP 1.6-J üzerinden CSMS'e bağlanan simüle şarj istasyonu.
-
-    Bu sınıf:
-    - BootNotification
-    - Authorize (RFID / kullanıcı kimlik doğrulama)
-    - StartTransaction / StopTransaction
-    - MeterValues (güç, akım, gerilim)
-
-    gönderebilen genel bir client gibi çalışır.
-
-    Anomali senaryoları (normal, dalgalı yük, kimlik hırsızlığı vb.)
-    'simulations/' içindeki dosyalardan bu sınıfın metodlarını kullanarak
-    OCPP akışını tetikleyecek.
+    OCPP 1.6J tabanlı, simüle edilmiş bir şarj istasyonu (Charge Point).
+    Senaryo kodu bu sınıfı kullanarak:
+        - BootNotification
+        - Heartbeat
+        - StatusNotification
+        - Authorize
+        - StartTransaction
+        - MeterValues
+        - StopTransaction
+    mesajlarını gönderir.
     """
 
+    def __init__(self, cp_id: str, connection: WebSocketClientProtocol) -> None:
+        super().__init__(cp_id, connection)
+        self.id = cp_id
+
+        self._heartbeat_interval: int = 10
+        self._heartbeat_task: Optional[asyncio.Task] = None
+        self._boot_accepted: bool = False
+
     # ------------------------------------------------------------------
-    # BOOT
+    # BOOT + HEARTBEAT
     # ------------------------------------------------------------------
-    async def send_boot_notification(self):
+    async def send_boot_notification(
+        self,
+        model: str = "SimulatedModel",
+        vendor: str = "AegisChargeSim",
+    ) -> None:
         """
-        CP ilk açıldığında CSMS'e kendini tanıtır.
+        CSMS'e BootNotification gönderir, dönen interval'e göre heartbeat aralığını ayarlar.
         """
         req = call.BootNotification(
-            charge_point_model="BSG-Simulated-CP",
-            charge_point_vendor="BSG-Team",
+            charge_point_model=model,
+            charge_point_vendor=vendor,
         )
+
         res: call_result.BootNotification = await self.call(req)
 
-        if res.status == RegistrationStatus.accepted:
-            logging.info("[%s] BootNotification accepted", self.id)
-        else:
-            logging.warning(
-                "[%s] BootNotification NOT accepted: %s",
+        self._boot_accepted = res.status == RegistrationStatus.accepted
+        if getattr(res, "interval", None):
+            try:
+                self._heartbeat_interval = int(res.interval)
+            except Exception:
+                logger.warning(
+                    "[%s] BootNotification interval parse edilemedi: %s",
+                    self.id,
+                    res.interval,
+                )
+
+        logger.info(
+            "[%s] BootNotification result: status=%s, interval=%s",
+            self.id,
+            res.status,
+            self._heartbeat_interval,
+        )
+
+    async def _heartbeat_loop(self) -> None:
+        """
+        BootNotification'dan gelen interval'e göre periyodik Heartbeat gönderir.
+        """
+        if not self._boot_accepted:
+            logger.warning(
+                "[%s] BootNotification ACCEPTED değil, heartbeat loop yine de başlıyor.",
                 self.id,
-                res.status,
             )
 
-    # ------------------------------------------------------------------
-    # AUTHORIZE (Kimlik Doğrulama)
-    # ------------------------------------------------------------------
-    async def send_authorize(self, id_tag: str) -> call_result.Authorize:
+        try:
+            while True:
+                await asyncio.sleep(self._heartbeat_interval)
+                try:
+                    req = call.Heartbeat()
+                    res: call_result.Heartbeat = await self.call(req)
+                    logger.info(
+                        "[%s] Heartbeat -> currentTime=%s",
+                        self.id,
+                        getattr(res, "current_time", None),
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "[%s] Heartbeat gönderilirken hata: %s",
+                        self.id,
+                        exc,
+                    )
+                    break
+        except asyncio.CancelledError:
+            logger.info("[%s] Heartbeat loop cancelled.", self.id)
+
+    async def start_heartbeat_loop(self) -> None:
         """
-        RFID kart / kullanıcı kimlik doğrulama isteği.
-        Kimlik hırsızlığı anomalisi için senaryo bu fonksiyonu
-        sahte / klonlanmış id_tag'lerle çağırabilir.
+        Heartbeat loop'unu arka planda çalıştırır.
         """
-        req = call.Authorize(
-            id_tag=id_tag
+        if self._heartbeat_task and not self._heartbeat_task.done():
+            return
+        self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
+
+    # ------------------------------------------------------------------
+    # STATUS NOTIFICATION
+    # ------------------------------------------------------------------
+    async def send_status_notification(
+        self,
+        connector_id: int = 1,
+        status: str = "Available",
+        error_code: str = "NoError",
+    ) -> None:
+        """
+        Connector durumunu CSMS'e bildirir.
+        Örn: Available, Preparing, Charging, Finishing, Faulted...
+        """
+        req = call.StatusNotification(
+            connector_id=connector_id,
+            error_code=error_code,
+            status=status,
+            timestamp=_utc_now_iso(),
         )
+        await self.call(req)
+        logger.info(
+            "[%s] StatusNotification -> conn=%s, status=%s, error=%s",
+            self.id,
+            connector_id,
+            status,
+            error_code,
+        )
+
+    # ------------------------------------------------------------------
+    # AUTHORIZE
+    # ------------------------------------------------------------------
+    async def send_authorize(self, id_tag: str) -> str:
+        """
+        Kullanıcı kartını doğrulamak için Authorize çağrısı yapar.
+        Dönüş:
+            - "Accepted"
+            - "Invalid"
+            - vs. (CSMS ne dönerse)
+        """
+        req = call.Authorize(id_tag=id_tag)
         res: call_result.Authorize = await self.call(req)
 
-        logging.info(
-            "[%s] Authorize result for id_tag=%s -> %s",
+        status = res.id_tag_info.get("status", "Invalid")
+        logger.info(
+            "[%s] Authorize -> idTag=%s, status=%s",
             self.id,
             id_tag,
-            getattr(res.id_tag_info, "status", "Unknown"),
+            status,
         )
 
-        return res
+        return status
 
     # ------------------------------------------------------------------
-    # START TRANSACTION
+    # START / STOP TRANSACTION
     # ------------------------------------------------------------------
     async def send_start_transaction(
         self,
@@ -84,27 +181,50 @@ class SimulatedChargePoint(CpBase):
         meter_start: int = 0,
     ) -> call_result.StartTransaction:
         """
-        Şarj oturumu başlangıcı.
+        Şarj oturumunu başlatır. CSMS transaction_id üretir.
+        Senaryo, dönen StartTransactionResult içinden transaction_id'yi alır.
         """
-        now = datetime.now(tz=timezone.utc).isoformat()
-
         req = call.StartTransaction(
             connector_id=connector_id,
             id_tag=id_tag,
             meter_start=meter_start,
-            timestamp=now,
+            timestamp=_utc_now_iso(),
         )
 
         res: call_result.StartTransaction = await self.call(req)
 
-        logging.info(
-            "[%s] StartTransaction -> tx_id=%s, status=%s",
+        logger.info(
+            "[%s] StartTransaction -> conn=%s, tx_id=%s, id_tag=%s",
             self.id,
+            connector_id,
             res.transaction_id,
-            getattr(res.id_tag_info, "status", "Unknown"),
+            id_tag,
         )
 
         return res
+
+    async def send_stop_transaction(
+        self,
+        transaction_id: int,
+        meter_stop: int = 0,
+    ) -> None:
+        """
+        Şarj oturumunu sonlandırır.
+        """
+        req = call.StopTransaction(
+            transaction_id=transaction_id,
+            meter_stop=meter_stop,
+            timestamp=_utc_now_iso(),
+        )
+
+        await self.call(req)
+
+        logger.info(
+            "[%s] StopTransaction -> tx_id=%s, meter_stop=%s",
+            self.id,
+            transaction_id,
+            meter_stop,
+        )
 
     # ------------------------------------------------------------------
     # METER VALUES
@@ -116,125 +236,94 @@ class SimulatedChargePoint(CpBase):
         current_a: float,
         voltage_v: float,
         transaction_id: Optional[int] = None,
-    ):
+        soc_percent: Optional[float] = None,
+    ) -> None:
         """
-        Detaylı MeterValues payload'ı gönderiyoruz:
-        - Power.Active.Import (kW)
-        - Current.Import (A)
-        - Voltage (V)
-
-        Dalgalı Yük Saldırısı (Oscillatory Load) senaryosunda özellikle
-        power_kw ve current_a anomali üretmek için kullanılacak.
+        Sayaç verilerini (Voltage, Current.Import, Power.Active.Import, SoC) CSMS'e gönderir.
+        Senaryo, bu fonksiyonu sadece aktif transaction varken çağırmalıdır.
         """
-        timestamp = datetime.now(tz=timezone.utc).isoformat()
 
         sampled_values = [
             {
-                "value": str(power_kw),
-                "measurand": "Power.Active.Import",
-                "unit": "kW",
+                "value": f"{voltage_v:.2f}",
+                "measurand": "Voltage",
+                "unit": "V",
             },
             {
-                "value": str(current_a),
+                "value": f"{current_a:.3f}",
                 "measurand": "Current.Import",
                 "unit": "A",
             },
             {
-                "value": str(voltage_v),
-                "measurand": "Voltage",
-                "unit": "V",
+                "value": f"{power_kw:.3f}",
+                "measurand": "Power.Active.Import",
+                "unit": "kW",
             },
         ]
 
-        payload = {
-            "connector_id": connector_id,
-            "meter_value": [
+        # Eğer senaryo SoC gönderiyorsa onu da sampledValue içine ekle
+        if soc_percent is not None:
+            sampled_values.append(
                 {
-                    "timestamp": timestamp,
-                    "sampledValue": sampled_values,
+                    "value": f"{soc_percent:.2f}",
+                    "measurand": "SoC",
+                    "unit": "Percent",
                 }
-            ],
-        }
+            )
 
-        # OCPP 1.6'da transactionId opsiyonel alan, doluysa ekleyelim
-        if transaction_id is not None:
-            payload["transaction_id"] = transaction_id
+        meter_value = [
+            {
+                "timestamp": _utc_now_iso(),
+                "sampledValue": sampled_values,
+            }
+        ]
 
-        req = call.MeterValues(**payload)
+        req = call.MeterValues(
+            connector_id=connector_id,
+            meter_value=meter_value,
+            transaction_id=transaction_id,
+        )
+
         await self.call(req)
 
-        logging.debug(
-            "[%s] MeterValues sent | conn=%s tx_id=%s P=%.3f kW I=%.3f A V=%.1f V",
+        logger.debug(
+            "[%s] MeterValues -> conn=%s, tx_id=%s, P=%.3f kW, I=%.3f A, V=%.2f V, SoC=%s",
             self.id,
             connector_id,
             transaction_id,
             power_kw,
             current_a,
             voltage_v,
+            f"{soc_percent:.2f}%" if soc_percent is not None else "N/A",
         )
-
-    # ------------------------------------------------------------------
-    # STOP TRANSACTION
-    # ------------------------------------------------------------------
-    async def send_stop_transaction(
-        self,
-        transaction_id: int,
-        meter_stop: int = 0,
-    ) -> call_result.StopTransaction:
-        """
-        Şarj oturumu bitişi.
-        """
-        now = datetime.now(tz=timezone.utc).isoformat()
-
-        req = call.StopTransaction(
-            transaction_id=transaction_id,
-            meter_stop=meter_stop,
-            timestamp=now,
-        )
-
-        res: call_result.StopTransaction = await self.call(req)
-
-        logging.info(
-            "[%s] StopTransaction -> tx_id=%s",
-            self.id,
-            transaction_id,
-        )
-
-        return res
 
 
 # ----------------------------------------------------------------------
-# Yardımcı fonksiyon: Charge Point'e bağlan
+# DIŞARIDAN KULLANILACAK HELPER
 # ----------------------------------------------------------------------
-async def connect_charge_point(cp_id: str, csms_url: str) -> SimulatedChargePoint:
+async def connect_charge_point(
+    cp_id: str,
+    csms_url: str = "ws://localhost:9000",
+) -> SimulatedChargePoint:
     """
-    Senaryo tarafında kullanacağımız yardımcı fonksiyon.
-
-    - CSMS websocket'ine bağlanır
-    - SimulatedChargePoint nesnesini oluşturur
-    - cp.start() için background task başlatır
-    - BootNotification gönderir
-    - Hazır ChargePoint nesnesini geri döner
-
-    Örnek kullanım (senaryo tarafında):
-
-        cp = await connect_charge_point("CP_1", "ws://127.0.0.1:9000/CP_1")
-        await cp.send_authorize("TAG123")
-        res = await cp.send_start_transaction(1, "TAG123")
-        tx_id = res.transaction_id
-        await cp.send_meter_values(1, 7.2, 18.0, 400.0, transaction_id=tx_id)
-        await cp.send_stop_transaction(tx_id)
+    Bir WebSocket bağlantısı açar, SimulatedChargePoint oluşturur,
+    BootNotification + Heartbeat loop'unu başlatır ve CP nesnesini döner.
+    Senaryo, bu fonksiyonu kullanarak CP listesi oluşturur.
     """
-    # CSMS'e websocket ile bağlan
-    ws = await websockets.connect(csms_url, subprotocols=["ocpp1.6"])
+    logger.info("[CP-CONNECT] Connecting cp_id=%s to %s", cp_id, csms_url)
+
+    ws: WebSocketClientProtocol = await websockets.connect(csms_url)
+
     cp = SimulatedChargePoint(cp_id, ws)
 
-    # CSMS'ten gelen mesajları dinleyen loop'u background'da çalıştır
+    # CSMS'ten gelen çağrıları dinleyen loop (RemoteStartTransaction vs.)
     asyncio.create_task(cp.start())
 
     # BootNotification gönder
     await cp.send_boot_notification()
+    logger.info("[%s] Connected to CSMS and BootNotification sent.", cp_id)
 
-    logging.info("[%s] Connected to CSMS and BootNotification sent.", cp_id)
+    # Heartbeat loop'u başlat
+    await cp.start_heartbeat_loop()
 
     return cp
