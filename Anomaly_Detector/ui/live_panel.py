@@ -24,6 +24,9 @@ def init_session_state():
             "CP_004": "Offline",
         }
 
+    if "multi_mode" not in st.session_state:
+        st.session_state.multi_mode = False
+
     if "sim_proc" not in st.session_state:
         st.session_state.sim_proc = None
 
@@ -31,8 +34,13 @@ def init_session_state():
         st.session_state.last_logs = ""
 
 
-def start_simulation_for_cp(cp_id: str, scenario: str, mode: str, duration: int):
-    """Seçilen CP için run_simulation.py'yi ayrı bir process olarak çalıştırır."""
+def start_simulation_for_cp(cp_id: str, scenario: str, mode: str, duration: int, stations: int = 1, cp_list: list[str] | None = None):
+    """Seçilen CP için run_simulation.py'yi ayrı bir process olarak çalıştırır.
+    
+    Parametreler:
+        cp_id: Tek CP modunda kullanılır (geriye uyumlu)
+        cp_list: Çoklu CP modunda kullanılır (yeni özellik)
+    """
 
     # Zaten çalışan bir process varsa tekrar başlatma
     proc = st.session_state.sim_proc
@@ -44,9 +52,13 @@ def start_simulation_for_cp(cp_id: str, scenario: str, mode: str, duration: int)
     cwd = str(PROJECT_ROOT)
 
     # Log dosyası adı (CP + senaryo + mod)
-    log_name = f"{scenario}_{mode}_{cp_id}.csv"
-    log_path = PROJECT_ROOT / "logs" / log_name
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    # run_simulation.py göreli path'i logs/ocpp/ altına koyuyor
+    if stations > 1:
+        log_name = f"{scenario}_{mode}_{stations}stations.csv"
+    else:
+        log_name = f"{scenario}_{mode}_{cp_id}.csv"
+    # Göreli path gönder (run_simulation.py logs/ocpp/ altına koyacak)
+    log_path = log_name
 
     cmd = [
         "py",  # Windows python launcher
@@ -58,10 +70,14 @@ def start_simulation_for_cp(cp_id: str, scenario: str, mode: str, duration: int)
         "--duration",
         str(duration),
         "--stations",
-        "1",
+        str(stations),
         "--output",
         str(log_path),
     ]
+    
+    # Eğer cp_list varsa ekle
+    if cp_list:
+        cmd.extend(["--cp-list"] + cp_list)
 
     proc = subprocess.Popen(
         cmd,
@@ -71,7 +87,10 @@ def start_simulation_for_cp(cp_id: str, scenario: str, mode: str, duration: int)
         text=True,
     )
     st.session_state.sim_proc = proc
-    st.success(f"Simülasyon başlatıldı (CP={cp_id}, PID={proc.pid}). Log: {log_path.name}")
+    if stations > 1:
+        st.success(f"Simülasyon başlatıldı ({stations} istasyon, PID={proc.pid}). Log: {log_path}")
+    else:
+        st.success(f"Simülasyon başlatıldı (CP={cp_id}, PID={proc.pid}). Log: {log_path}")
 
 
 def stop_simulation():
@@ -192,20 +211,85 @@ def main():
         left, right = st.columns([2, 3])
 
         with left:
-            cp_list = list(st.session_state.cp_states.keys())
-            selected_cp = st.selectbox("Charge Point", cp_list, index=0)
-
-            # Seçili CP'nin durumu
-            cp_status = st.session_state.cp_states[selected_cp]
-
-            if cp_status == "Active":
-                st.success(f"{selected_cp} şu anda **Active / Available**.")
+            # Çoklu İstasyon Modu butonu
+            col_multi, col_info = st.columns([1, 2])
+            with col_multi:
+                if st.button("🔢 Çoklu İstasyon Modu", help="50 şarj istasyonu oluşturur"):
+                    # 50 CP oluştur
+                    for i in range(1, 51):
+                        cp_id = f"CP_{i:03d}"
+                        if cp_id not in st.session_state.cp_states:
+                            st.session_state.cp_states[cp_id] = "Active"
+                    st.session_state.multi_mode = True
+                    st.rerun()
+            
+            with col_info:
+                if st.session_state.multi_mode:
+                    st.info("Çoklu mod aktif")
+            
+            # Mod seçimi
+            simulation_mode = st.radio(
+                "Simülasyon Modu",
+                options=["Tek İstasyon", "Çoklu İstasyon"],
+                index=0 if not st.session_state.multi_mode else 1,
+                help="Tek istasyon: Bir CP seçin. Çoklu istasyon: Birden fazla CP seçin."
+            )
+            
+            is_multi = (simulation_mode == "Çoklu İstasyon")
+            
+            # Çoklu mod seçildiyse ve yeterli CP yoksa otomatik oluştur
+            if is_multi:
+                current_cp_count = len(st.session_state.cp_states)
+                if current_cp_count < 50:
+                    # 50 CP'ye tamamla
+                    for i in range(1, 51):
+                        cp_id = f"CP_{i:03d}"
+                        if cp_id not in st.session_state.cp_states:
+                            st.session_state.cp_states[cp_id] = "Active"
+                    st.session_state.multi_mode = True
+            
+            cp_list = sorted(list(st.session_state.cp_states.keys()))  # Sıralı liste
+            active_cp_list = [cp for cp in cp_list if st.session_state.cp_states[cp] == "Active"]
+            
+            if is_multi:
+                # Çoklu seçim
+                selected_cps = st.multiselect(
+                    "Charge Points (Çoklu Seçim)",
+                    options=cp_list,
+                    default=active_cp_list[:min(10, len(active_cp_list))] if active_cp_list else [],
+                    help="Birden fazla CP seçebilirsiniz. Seçilen CP sayısı kadar istasyon simüle edilir."
+                )
+                
+                if selected_cps:
+                    # Seçilen CP'lerin durumunu kontrol et
+                    inactive_cps = [cp for cp in selected_cps if st.session_state.cp_states[cp] != "Active"]
+                    if inactive_cps:
+                        st.warning(f"⚠️ Şu CP'ler Offline: {', '.join(inactive_cps)}")
+                    
+                    active_selected = [cp for cp in selected_cps if st.session_state.cp_states[cp] == "Active"]
+                    stations_count = len(active_selected)
+                    st.info(f"📊 {stations_count} aktif istasyon seçildi")
+                else:
+                    stations_count = 0
+                    st.warning("En az bir CP seçmelisiniz.")
             else:
-                st.error(f"{selected_cp} şu anda **Offline / Unavailable**. Bu CP ile simülasyon başlatılamaz.")
+                # Tek seçim
+                selected_cp = st.selectbox("Charge Point", cp_list, index=0)
+                selected_cps = [selected_cp]
+                
+                # Seçili CP'nin durumu
+                cp_status = st.session_state.cp_states[selected_cp]
+
+                if cp_status == "Active":
+                    st.success(f"{selected_cp} şu anda **Active / Available**.")
+                else:
+                    st.error(f"{selected_cp} şu anda **Offline / Unavailable**. Bu CP ile simülasyon başlatılamaz.")
+                
+                stations_count = 1 if cp_status == "Active" else 0
 
             scenario = st.selectbox(
                 "Scenario",
-                options=["dalgali_yuk"],  # şimdilik tek senaryo
+                options=["dalgali_yuk", "sebeke_istikrarsizligi"],  # İki senaryo mevcut
             )
 
             mode = st.selectbox(
@@ -221,18 +305,34 @@ def main():
 
             with col_a:
                 if st.button("▶ Start Simulation"):
-                    if cp_status != "Active":
-                        st.error(
-                            f"{selected_cp} Offline olduğu için simülasyon başlatılmadı. "
-                            "Önce Charge Points sekmesinden durumu **Active** yapmalısın."
-                        )
+                    if is_multi:
+                        if not selected_cps:
+                            st.error("En az bir CP seçmelisiniz.")
+                        elif stations_count == 0:
+                            st.error("Seçilen CP'lerden hiçbiri Active değil. Önce Charge Points sekmesinden durumu **Active** yapmalısın.")
+                        else:
+                            start_simulation_for_cp(
+                                cp_id=selected_cps[0] if selected_cps else "CP_001",
+                                scenario=scenario,
+                                mode=mode,
+                                duration=duration,
+                                stations=stations_count,
+                                cp_list=selected_cps,  # Seçilen CP listesini gönder
+                            )
                     else:
-                        start_simulation_for_cp(
-                            cp_id=selected_cp,
-                            scenario=scenario,
-                            mode=mode,
-                            duration=duration,
-                        )
+                        if stations_count == 0:
+                            st.error(
+                                f"{selected_cp} Offline olduğu için simülasyon başlatılmadı. "
+                                "Önce Charge Points sekmesinden durumu **Active** yapmalısın."
+                            )
+                        else:
+                            start_simulation_for_cp(
+                                cp_id=selected_cp,
+                                scenario=scenario,
+                                mode=mode,
+                                duration=duration,
+                                stations=1,
+                            )
 
             with col_b:
                 if st.button("⏹ Stop Simulation"):

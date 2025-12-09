@@ -217,6 +217,7 @@ async def run_scenario(
     duration: int,
     stations: int,
     output_path: str,
+    cp_list: list[str] | None = None,
 ) -> None:
     """
     run_simulation.py'nin beklediği senaryo giriş noktası.
@@ -229,4 +230,5 @@ async def run_scenario(
         duration=duration,
         stations=stations,
         output_path=output_path,
+        cp_list=cp_list,
     )

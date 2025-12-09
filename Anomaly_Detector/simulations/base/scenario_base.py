@@ -152,6 +152,7 @@ class ScenarioBase(ABC):
         duration: int,
         stations: int,
         output_path: str,
+        cp_list: list[str] | None = None,
     ) -> None:
         """
         run_simulation.py tarafından çağrılan ana giriş noktası.
@@ -162,6 +163,10 @@ class ScenarioBase(ABC):
           - İstasyonları bağla
           - Senaryonun akışını çalıştır
           - En sonda tüm bağlantı / dosya cleanup
+        
+        Parametreler:
+          cp_list: Opsiyonel CP ID listesi. Verilmezse CP_001'den başlayarak
+                   stations kadar CP oluşturulur (geriye uyumlu).
         """
         self._mode = mode
         self._step_counter = 0
@@ -204,28 +209,93 @@ class ScenarioBase(ABC):
         self._csms.event_callback = self._on_event
         self._csms_task = asyncio.create_task(self._csms.start())
 
-        # Server gerçekten dinlemeye başlasın diye küçük bir bekleme
-        await asyncio.sleep(0.2)
+        # Server gerçekten dinlemeye başlasın diye bekleme (1 saniye)
+        await asyncio.sleep(1.0)
 
         # --------------------------------------------------------------
-        # 4) İstasyonları bağla
+        # 4) İstasyonları bağla (paralel bağlantı için)
         # --------------------------------------------------------------
         self._cps = []
-        for idx in range(1, stations + 1):
-            cp_id = f"CP_{idx:03d}"
-            csms_url = f"ws://localhost:9000/{cp_id}"
-            cp = await connect_charge_point(cp_id=cp_id, csms_url=csms_url)
-            self._cps.append(cp)
+        
+        async def connect_with_retry(cp_id: str, csms_url: str, max_retries: int = 3):
+            """Bağlantıyı retry ile dene"""
+            for attempt in range(max_retries):
+                try:
+                    cp = await connect_charge_point(cp_id=cp_id, csms_url=csms_url)
+                    print(f"[OK] {cp_id} başarıyla bağlandı (deneme {attempt + 1}/{max_retries})")
+                    return cp
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 0.5 * (attempt + 1)
+                        print(f"[RETRY] {cp_id} bağlantı hatası (deneme {attempt + 1}/{max_retries}): {e}. {wait_time:.1f} saniye bekleniyor...")
+                        await asyncio.sleep(wait_time)  # Exponential backoff
+                        continue
+                    else:
+                        print(f"[ERROR] {cp_id} {max_retries} denemeden sonra bağlanamadı: {e}")
+                        return None
+        
+        # CP listesini belirle
+        if cp_list is not None:
+            # Kullanıcı CP listesi vermiş - bunları kullan
+            target_cp_ids = cp_list
+            print(f"[INFO] Kullanıcı tarafından belirtilen {len(target_cp_ids)} CP bağlanacak: {', '.join(target_cp_ids)}")
+        else:
+            # Geriye uyumlu: CP_001'den başlayarak stations kadar
+            target_cp_ids = [f"CP_{idx:03d}" for idx in range(1, stations + 1)]
+            print(f"[INFO] {stations} istasyon otomatik oluşturulacak: {', '.join(target_cp_ids)}")
+        
+        # Paralel bağlantı (batch'ler halinde)
+        batch_size = 5  # Her seferinde 5 istasyon bağla (CSMS'e yük bindirmemek için)
+        print(f"[INFO] {len(target_cp_ids)} istasyon {batch_size}'li batch'ler halinde bağlanacak...")
+        
+        for batch_start in range(0, len(target_cp_ids), batch_size):
+            batch_end = min(batch_start + batch_size, len(target_cp_ids))
+            batch_tasks = []
+            
+            batch_cp_ids = target_cp_ids[batch_start:batch_end]
+            print(f"[INFO] Batch {batch_start+1}-{batch_end} bağlanıyor: {', '.join(batch_cp_ids)}")
+            
+            for cp_id in batch_cp_ids:
+                csms_url = f"ws://localhost:9000/{cp_id}"
+                batch_tasks.append(connect_with_retry(cp_id, csms_url))
+            
+            # Bu batch'i paralel bağla
+            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+            
+            for result in batch_results:
+                if result is not None and not isinstance(result, Exception):
+                    self._cps.append(result)
+                elif isinstance(result, Exception):
+                    print(f"[ERROR] Bağlantı hatası: {result}")
+            
+            # Batch'ler arası bekleme (CSMS'e yük bindirmemek için)
+            if batch_end < len(target_cp_ids):
+                await asyncio.sleep(0.5)  # 0.2'den 0.5'e çıkarıldı
+        
+        print(f"[INFO] {len(self._cps)}/{len(target_cp_ids)} istasyon başarıyla bağlandı.")
+
+        # Boş CP listesi kontrolü
+        if not self._cps:
+            print(f"[ERROR] Hiçbir istasyon bağlanamadı! Simülasyon durduruluyor.")
+            print(f"[ERROR] Lütfen CSMS server'ın çalıştığından ve port 9000'in açık olduğundan emin olun.")
+            return
 
         # --------------------------------------------------------------
         # 5) Senaryoya özel akışı çalıştır
         # --------------------------------------------------------------
         try:
+            print(f"[INFO] Senaryo akışı başlatılıyor ({len(self._cps)} CP ile)...")
             await self.run_for_all_charge_points(
                 cps=self._cps,
                 mode=mode,
                 duration=duration,
             )
+            print(f"[INFO] Senaryo akışı tamamlandı.")
+        except Exception as e:
+            print(f"[ERROR] Senaryo akışında hata oluştu: {e}")
+            import traceback
+            print(f"[ERROR] Traceback:\n{traceback.format_exc()}")
+            raise
         finally:
             # --- CP bağlantılarını kapat ---
             for cp in self._cps:

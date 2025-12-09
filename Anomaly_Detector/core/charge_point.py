@@ -312,7 +312,18 @@ async def connect_charge_point(
     """
     logger.info("[CP-CONNECT] Connecting cp_id=%s to %s", cp_id, csms_url)
 
-    ws: WebSocketClientProtocol = await websockets.connect(csms_url)
+    # Timeout ile bağlantı (5 saniye - daha kısa timeout)
+    try:
+        ws: WebSocketClientProtocol = await asyncio.wait_for(
+            websockets.connect(csms_url),
+            timeout=5.0
+        )
+    except asyncio.TimeoutError:
+        logger.error("[CP-CONNECT] Timeout connecting %s to %s", cp_id, csms_url)
+        raise ConnectionError(f"Timeout connecting {cp_id} to {csms_url}")
+    except Exception as e:
+        logger.error("[CP-CONNECT] Connection error for %s: %s", cp_id, e)
+        raise
 
     cp = SimulatedChargePoint(cp_id, ws)
 
