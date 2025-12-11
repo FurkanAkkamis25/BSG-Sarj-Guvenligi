@@ -88,10 +88,8 @@ class DalgaliYukScenario(ScenarioBase):
                 status="Charging",
             )
 
+       
         # -----------------------------
-        # 4) MeterValues DÖNGÜSÜ
-        # -----------------------------
-                # -----------------------------
         # 4) MeterValues DÖNGÜSÜ
         # -----------------------------
         voltage_v = 400.0

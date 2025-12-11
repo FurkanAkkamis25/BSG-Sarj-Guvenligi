@@ -184,12 +184,16 @@ class ScenarioBase(ABC):
         # --------------------------------------------------------------
         # 2) Gerçek CSMS logları (çoklu CSV)
         # --------------------------------------------------------------
-        stem = base_path.stem
-        suffix = base_path.suffix or ".csv"
-        log_dir = base_path.parent
+        # Raw log klasör yapısı:
+        #   logs/raw/{normal|attack}/{scenario_name}/{YYYYMMDD_HHMMSS}/
+        # içine ayrı CSV'ler (meter_values, status_notifications, ...)
+        label_dir = "normal" if mode == "normal" else "attack"
+        ts_folder = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        raw_dir = Path("logs") / "raw" / label_dir / self.config.name / ts_folder
+        raw_dir.mkdir(parents=True, exist_ok=True)
 
         def _open(name: str, fieldnames: List[str]):
-            path = log_dir / f"{stem}_{name}{suffix}"
+            path = raw_dir / f"{name}.csv"
             f = path.open("w", newline="", encoding="utf-8")
             w = csv.DictWriter(f, fieldnames=fieldnames)
             w.writeheader()
@@ -204,7 +208,9 @@ class ScenarioBase(ABC):
         # --------------------------------------------------------------
         # 3) CSMS server'ını ayağa kaldır
         # --------------------------------------------------------------
-        self._csms = CentralSystem(host="0.0.0.0", port=9000)
+        # TLS'i aktifleştirmek için use_tls=True kullanıyoruz. Sertifika dosyaları
+        # bulunamazsa csms_server otomatik olarak WS moduna geri düşer.
+        self._csms = CentralSystem(host="0.0.0.0", port=9000, use_tls=True)
         # bütün event'ler buradan düşecek
         self._csms.event_callback = self._on_event
         self._csms_task = asyncio.create_task(self._csms.start())
@@ -217,6 +223,10 @@ class ScenarioBase(ABC):
         # --------------------------------------------------------------
         self._cps = []
         
+        # CSMS TLS kullanıyor mu? Buna göre ws / wss seçelim
+        scheme = "wss" if getattr(self._csms, "use_tls", False) else "ws"
+        print(f"[INFO] CSMS bağlantı şeması: {scheme.upper()} (TLS={'ON' if scheme == 'wss' else 'OFF'})")
+        
         async def connect_with_retry(cp_id: str, csms_url: str, max_retries: int = 3):
             """Bağlantıyı retry ile dene"""
             for attempt in range(max_retries):
@@ -227,8 +237,11 @@ class ScenarioBase(ABC):
                 except Exception as e:
                     if attempt < max_retries - 1:
                         wait_time = 0.5 * (attempt + 1)
-                        print(f"[RETRY] {cp_id} bağlantı hatası (deneme {attempt + 1}/{max_retries}): {e}. {wait_time:.1f} saniye bekleniyor...")
-                        await asyncio.sleep(wait_time)  # Exponential backoff
+                        print(
+                            f"[RETRY] {cp_id} bağlantı hatası (deneme {attempt + 1}/{max_retries}): "
+                            f"{e}. {wait_time:.1f} saniye bekleniyor..."
+                        )
+                        await asyncio.sleep(wait_time)  # Basit backoff
                         continue
                     else:
                         print(f"[ERROR] {cp_id} {max_retries} denemeden sonra bağlanamadı: {e}")
@@ -256,7 +269,8 @@ class ScenarioBase(ABC):
             print(f"[INFO] Batch {batch_start+1}-{batch_end} bağlanıyor: {', '.join(batch_cp_ids)}")
             
             for cp_id in batch_cp_ids:
-                csms_url = f"ws://localhost:9000/{cp_id}"
+                # !!! BURASI ARTIK TLS-DOSTU
+                csms_url = f"{scheme}://localhost:9000/{cp_id}"
                 batch_tasks.append(connect_with_retry(cp_id, csms_url))
             
             # Bu batch'i paralel bağla
@@ -279,6 +293,7 @@ class ScenarioBase(ABC):
             print(f"[ERROR] Hiçbir istasyon bağlanamadı! Simülasyon durduruluyor.")
             print(f"[ERROR] Lütfen CSMS server'ın çalıştığından ve port 9000'in açık olduğundan emin olun.")
             return
+
 
         # --------------------------------------------------------------
         # 5) Senaryoya özel akışı çalıştır
@@ -527,6 +542,8 @@ class ScenarioBase(ABC):
         CSMS'ten gelen event'i tek tip CSV satırına çevirir.
         (Eski pipeline / merge_logs ve anomaly çalışmaları için.)
         """
+        if message_type == "Heartbeat":
+            return None
         event = dict(raw_event)
 
         timestamp = event.get("timestamp") or _utc_now_iso()
