@@ -297,7 +297,36 @@ class UzaktanKomutTaklidiScenario(ScenarioBase):
         # Saldırı sonrası MeterValues (güç=0) saldırı etkisini gösterir
         if message_type == "MeterValues":
             # MeterValues içinde güç değeri 0 ise saldırı sonrası
-            power_kw = event.get("power_kw")
+            power_kw = None
+            meter_value = event.get("meter_value", [])
+            
+            # meter_value yapısından güç değerini çıkar
+            try:
+                if isinstance(meter_value, list) and meter_value:
+                    first_mv = meter_value[0]
+                    if isinstance(first_mv, dict):
+                        sampled_values = first_mv.get("sampledValue") or first_mv.get("sampled_value") or []
+                    else:
+                        sampled_values = getattr(first_mv, "sampledValue", None) or getattr(first_mv, "sampled_value", None) or []
+                    
+                    for sv in sampled_values:
+                        if isinstance(sv, dict):
+                            meas = sv.get("measurand")
+                            val_str = sv.get("value")
+                        else:
+                            meas = getattr(sv, "measurand", None)
+                            val_str = getattr(sv, "value", None)
+                        
+                        if meas == "Power.Active.Import" and val_str is not None:
+                            try:
+                                power_kw = float(val_str)
+                            except (TypeError, ValueError):
+                                pass
+                            break
+            except Exception:
+                pass
+            
+            # Güç 0 ise saldırı sonrası
             if power_kw is not None and power_kw == 0.0:
                 return "remote_command_spoofing_attack"
             # Saldırı öncesi normal MeterValues

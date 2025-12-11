@@ -36,76 +36,54 @@ class ScenarioBase(ABC):
       - Senaryonun akışını run_for_all_charge_points'e bırak
     """
 
-    # Eski birleşik dataset formatı (merge_logs / ML için)
-    FIELDNAMES = [
-        "timestamp",
-        "charge_point_id",
-        "scenario",
-        "mode",
-        "step",
-        "message_type",
-        "transaction_id",
-        "connector_id",
-        "id_tag",
-        "power_kw",
-        "current_a",
-        "voltage_v",
-        "soc_percent",
-        "label",
-        "raw_payload",
-    ]
+    # --- CSMS log tabloları için kolon setleri ---
+    # 🔴 SCRUM MASTER GEREKSİNİMİ: Tüm CSV'lerde standart format
 
-    # --- Gerçek CSMS log tabloları için kolon setleri ---
-
-    # Sayaç / ölçüm verisi
+    # Sayaç / ölçüm verisi (AI eğitimi için ana dataset)
     METER_FIELDNAMES = [
-        "timestamp",
-        "cp_id",
-        "transaction_id",
-        "connector_id",
-        "power_kw",
-        "current_a",
-        "voltage_v",
-        "soc_percent",
-        "raw_payload",
+        "Timestamp",           # Büyük T
+        "Transaction_ID",      # Alt çizgili, büyük harfler
+        "Voltage",             # Kısaltılmış
+        "Current_Import",      # İsim değişti
+        "Power_Import",        # İsim değişti
+        "SoC",                 # Kısaltılmış
+        "Label",               # YENİ - anomaly label
     ]
 
     # Durum değişimleri
     STATUS_FIELDNAMES = [
-        "timestamp",
-        "cp_id",
-        "connector_id",
-        "status",
-        "error_code",
-        "raw_payload",
+        "Timestamp",
+        "Connector_ID",
+        "Status",
+        "Error_Code",
+        "Label",
     ]
 
     # Heartbeat / health
     HEARTBEAT_FIELDNAMES = [
-        "timestamp",
-        "cp_id",
-        "raw_payload",
+        "Timestamp",
+        "CP_ID",
+        "Label",
     ]
 
     # Start / StopTransaction
     TRANSACTION_FIELDNAMES = [
-        "timestamp",
-        "cp_id",
-        "event_type",        # StartTransaction / StopTransaction
-        "transaction_id",
-        "id_tag",
-        "meter_start",
-        "meter_stop",
-        "reason",
-        "raw_payload",
+        "Timestamp",
+        "Event_Type",          # StartTransaction / StopTransaction
+        "Transaction_ID",
+        "ID_Tag",
+        "Meter_Start",
+        "Meter_Stop",
+        "Reason",
+        "Label",
     ]
 
     # Ham event tablosu (audit / debug)
     RAW_EVENT_FIELDNAMES = [
-        "timestamp",
-        "cp_id",
-        "message_type",
-        "raw_payload",
+        "Timestamp",
+        "CP_ID",
+        "Message_Type",
+        "Label",
     ]
 
     def __init__(self, config: ScenarioConfig) -> None:
@@ -171,25 +149,14 @@ class ScenarioBase(ABC):
         self._mode = mode
         self._step_counter = 0
 
-        base_path = Path(output_path)
-        base_path.parent.mkdir(parents=True, exist_ok=True)
-
         # --------------------------------------------------------------
-        # 1) Eski birleşik CSV (ML / merge_logs için)
-        # --------------------------------------------------------------
-        self._csv_file = base_path.open("w", newline="", encoding="utf-8")
-        self._csv_writer = csv.DictWriter(self._csv_file, fieldnames=self.FIELDNAMES)
-        self._csv_writer.writeheader()
-
-        # --------------------------------------------------------------
-        # 2) Gerçek CSMS logları (çoklu CSV)
+        # 1) CSMS logları (çoklu CSV)
         # --------------------------------------------------------------
         # Raw log klasör yapısı:
-        #   logs/raw/{normal|attack}/{scenario_name}/{YYYYMMDD_HHMMSS}/
+        #   logs/raw/{normal|attack}/{scenario_name}/
         # içine ayrı CSV'ler (meter_values, status_notifications, ...)
         label_dir = "normal" if mode == "normal" else "attack"
-        ts_folder = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        raw_dir = Path("logs") / "raw" / label_dir / self.config.name / ts_folder
+        raw_dir = Path("logs") / "raw" / label_dir / self.config.name
         raw_dir.mkdir(parents=True, exist_ok=True)
 
         def _open(name: str, fieldnames: List[str]):
@@ -206,7 +173,7 @@ class ScenarioBase(ABC):
         self._raw_file, self._raw_writer = _open("events_raw", self.RAW_EVENT_FIELDNAMES)
 
         # --------------------------------------------------------------
-        # 3) CSMS server'ını ayağa kaldır
+        # 2) CSMS server'ını ayağa kaldır
         # --------------------------------------------------------------
         # TLS'i aktifleştirmek için use_tls=True kullanıyoruz. Sertifika dosyaları
         # bulunamazsa csms_server otomatik olarak WS moduna geri düşer.
@@ -219,7 +186,7 @@ class ScenarioBase(ABC):
         await asyncio.sleep(1.0)
 
         # --------------------------------------------------------------
-        # 4) İstasyonları bağla (paralel bağlantı için)
+        # 3) İstasyonları bağla (paralel bağlantı için)
         # --------------------------------------------------------------
         self._cps = []
         
@@ -296,7 +263,7 @@ class ScenarioBase(ABC):
 
 
         # --------------------------------------------------------------
-        # 5) Senaryoya özel akışı çalıştır
+        # 4) Senaryoya özel akışı çalıştır
         # --------------------------------------------------------------
         try:
             print(f"[INFO] Senaryo akışı başlatılıyor ({len(self._cps)} CP ile)...")
@@ -344,7 +311,6 @@ class ScenarioBase(ABC):
     def _close_all_csv_files(self) -> None:
         """Tüm CSV dosyalarını güvenli şekilde kapat."""
         for f in [
-            self._csv_file,
             self._mv_file,
             self._status_file,
             self._hb_file,
@@ -357,7 +323,6 @@ class ScenarioBase(ABC):
             except Exception:
                 pass
 
-        self._csv_file = None
         self._mv_file = None
         self._status_file = None
         self._hb_file = None
@@ -369,8 +334,7 @@ class ScenarioBase(ABC):
         CentralSystem.event_callback tarafından çağrılır.
 
         - Dış hook'ları tetikler
-        - Gerçek CSMS loglarını (çoklu CSV) yazar
-        - Birleşik dataset için tek satırlık row üretir
+        - CSMS loglarını (çoklu CSV) yazar
         """
         # Hook'lar
         for hook in self.event_hooks:
@@ -379,20 +343,8 @@ class ScenarioBase(ABC):
             except Exception:
                 pass
 
-        # Gerçek loglar
+        # CSMS logları
         self._log_realistic(message_type, event)
-
-        # Birleşik CSV
-        if self._csv_writer is None:
-            return
-
-        row = self._event_to_row(message_type, event, mode=self._mode)
-        if row is None:
-            return
-
-        self._csv_writer.writerow(row)
-        if self._csv_file is not None:
-            self._csv_file.flush()
 
     # simulations/base/scenario_base.py
 
@@ -401,15 +353,18 @@ class ScenarioBase(ABC):
         event = dict(raw_event)
         ts = event.get("timestamp") or _utc_now_iso()
         cp_id = event.get("cp_id")
+        
+        # 🔴 Label hesapla (her event için gerekli)
+        label = self.get_label_for_event(event, mode=self._mode)
 
         # 1) Ham event tablosu (her şey buraya da gider)
         if self._raw_writer is not None:
             self._raw_writer.writerow(
                 {
-                    "timestamp": ts,
-                    "cp_id": cp_id,
-                    "message_type": message_type,
-                    "raw_payload": json.dumps(event, ensure_ascii=False),
+                    "Timestamp": ts,
+                    "CP_ID": cp_id,
+                    "Message_Type": message_type,
+                    "Label": label,
                 }
             )
             if self._raw_file is not None:
@@ -421,9 +376,9 @@ class ScenarioBase(ABC):
             if self._hb_writer is not None:
                 self._hb_writer.writerow(
                     {
-                        "timestamp": ts,
-                        "cp_id": cp_id,
-                        "raw_payload": json.dumps(event, ensure_ascii=False),
+                        "Timestamp": ts,
+                        "CP_ID": cp_id,
+                        "Label": label,
                     }
                 )
                 if self._hb_file is not None:
@@ -432,12 +387,11 @@ class ScenarioBase(ABC):
         elif message_type == "StatusNotification":
             if self._status_writer is not None:
                 row = {
-                    "timestamp": ts,
-                    "cp_id": cp_id,
-                    "connector_id": event.get("connector_id"),
-                    "status": event.get("status"),
-                    "error_code": event.get("error_code"),
-                    "raw_payload": json.dumps(event, ensure_ascii=False),
+                    "Timestamp": ts,
+                    "Connector_ID": event.get("connector_id"),
+                    "Status": event.get("status"),
+                    "Error_Code": event.get("error_code"),
+                    "Label": label,
                 }
                 self._status_writer.writerow(row)
                 if self._status_file is not None:
@@ -497,16 +451,15 @@ class ScenarioBase(ABC):
                     # Log kırılmasın diye yutuyoruz
                     pass
 
+                # 🔴 YENİ FORMAT: Scrum Master gereksinimleri
                 row = {
-                    "timestamp": ts,
-                    "cp_id": cp_id,
-                    "transaction_id": event.get("transaction_id"),
-                    "connector_id": event.get("connector_id"),
-                    "power_kw": power_kw,
-                    "current_a": current_a,
-                    "voltage_v": voltage_v,
-                    "soc_percent": soc_percent,
-                    "raw_payload": json.dumps(event, ensure_ascii=False),
+                    "Timestamp": ts,
+                    "Transaction_ID": event.get("transaction_id"),
+                    "Voltage": voltage_v,
+                    "Current_Import": current_a,
+                    "Power_Import": power_kw,
+                    "SoC": soc_percent,
+                    "Label": label,
                 }
                 self._mv_writer.writerow(row)
                 if self._mv_file is not None:
@@ -515,119 +468,18 @@ class ScenarioBase(ABC):
         elif message_type in ("StartTransaction", "StopTransaction"):
             if self._tx_writer is not None:
                 row = {
-                    "timestamp": ts,
-                    "cp_id": cp_id,
-                    "event_type": message_type,
-                    "transaction_id": event.get("transaction_id"),
-                    "id_tag": event.get("id_tag"),
-                    "meter_start": event.get("meter_start"),
-                    "meter_stop": event.get("meter_stop"),
-                    "reason": event.get("reason"),
-                    "raw_payload": json.dumps(event, ensure_ascii=False),
+                    "Timestamp": ts,
+                    "Event_Type": message_type,
+                    "Transaction_ID": event.get("transaction_id"),
+                    "ID_Tag": event.get("id_tag"),
+                    "Meter_Start": event.get("meter_start"),
+                    "Meter_Stop": event.get("meter_stop"),
+                    "Reason": event.get("reason"),
+                    "Label": label,
                 }
                 self._tx_writer.writerow(row)
                 if self._tx_file is not None:
                     self._tx_file.flush()
-
-    # ------------------------------------------------------------------
-    # Birleşik dataset (ML) için row üretici
-    # ------------------------------------------------------------------
-    def _event_to_row(
-        self,
-        message_type: str,
-        raw_event: Dict[str, Any],
-        mode: str,
-    ) -> Optional[Dict[str, Any]]:
-        """
-        CSMS'ten gelen event'i tek tip CSV satırına çevirir.
-        (Eski pipeline / merge_logs ve anomaly çalışmaları için.)
-        """
-        if message_type == "Heartbeat":
-            return None
-        event = dict(raw_event)
-
-        timestamp = event.get("timestamp") or _utc_now_iso()
-        cp_id = event.get("cp_id") or event.get("charge_point_id")
-        connector_id = event.get("connector_id")
-        transaction_id = event.get("transaction_id")
-        id_tag = event.get("id_tag")
-
-        power_kw: Optional[float] = None
-        current_a: Optional[float] = None
-        voltage_v: Optional[float] = None
-        soc_percent: Optional[float] = None
-
-        if message_type == "MeterValues":
-            meter_value = event.get("meter_value", [])
-            try:
-                if isinstance(meter_value, list) and meter_value:
-                    first_mv = meter_value[0]
-
-                    if isinstance(first_mv, dict):
-                        sampled_values = (
-                            first_mv.get("sampledValue")
-                            or first_mv.get("sampled_value")
-                            or []
-                        )
-                    else:
-                        sampled_values = (
-                            getattr(first_mv, "sampledValue", None)
-                            or getattr(first_mv, "sampled_value", None)
-                            or []
-                        )
-
-                    for sv in sampled_values:
-                        if isinstance(sv, dict):
-                            meas = sv.get("measurand")
-                            val_str = sv.get("value")
-                        else:
-                            meas = getattr(sv, "measurand", None)
-                            val_str = getattr(sv, "value", None)
-
-                        if val_str is None:
-                            continue
-
-                        try:
-                            val = float(val_str)
-                        except (TypeError, ValueError):
-                            continue
-
-                        if meas == "Power.Active.Import":
-                            power_kw = val
-                        elif meas == "Current.Import":
-                            current_a = val
-                        elif meas == "Voltage":
-                            voltage_v = val
-                        elif meas in ("SoC", "StateOfCharge"):
-                            soc_percent = val
-            except Exception:
-                pass
-
-
-        label = self.get_label_for_event(event, mode=mode)
-
-        # step'i her event'te bir artır
-        self._step_counter += 1
-        step = self._step_counter
-
-        row: Dict[str, Any] = {
-            "timestamp": timestamp,
-            "charge_point_id": cp_id,
-            "scenario": self.config.name,
-            "mode": mode,
-            "step": step,
-            "message_type": message_type,
-            "transaction_id": transaction_id,
-            "connector_id": connector_id,
-            "id_tag": id_tag,
-            "power_kw": power_kw,
-            "current_a": current_a,
-            "voltage_v": voltage_v,
-            "soc_percent": soc_percent,
-            "label": label,
-            "raw_payload": json.dumps(event, ensure_ascii=False),
-        }
-        return row
 
     # ------------------------------------------------------------------
     # ALT SINIFLARIN UYGULAYACAĞI METOTLAR
