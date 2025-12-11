@@ -1,5 +1,6 @@
 # core/charge_point.py
-
+import ssl
+import os
 import asyncio
 import logging
 from datetime import datetime, timezone
@@ -309,10 +310,41 @@ async def connect_charge_point(
     Bir WebSocket bağlantısı açar, SimulatedChargePoint oluşturur,
     BootNotification + Heartbeat loop'unu başlatır ve CP nesnesini döner.
     Senaryo, bu fonksiyonu kullanarak CP listesi oluşturur.
+
+    TLS Mantığı:
+      - Eğer URL "wss://" ile başlıyorsa veya CP_USE_TLS=1/true ise,
+        TLS etkinleştirilir ve ssl context oluşturulur.
+      - Aksi halde düz WS (şifresiz) bağlantı kullanılır.
     """
     logger.info("[CP-CONNECT] Connecting cp_id=%s to %s", cp_id, csms_url)
 
-    ws: WebSocketClientProtocol = await websockets.connect(csms_url)
+    use_tls_env = os.getenv("CP_USE_TLS", "").lower() in ("1", "true", "yes")
+    is_wss = csms_url.startswith("wss://")
+
+    ssl_ctx: Optional[ssl.SSLContext] = None
+    if is_wss or use_tls_env:
+        try:
+            ssl_ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+            ca_file = os.getenv("CP_CA_FILE")
+            if ca_file and os.path.isfile(ca_file):
+                ssl_ctx.load_verify_locations(cafile=ca_file)
+                logger.info("[CP-CONNECT] Using CA file for TLS verification: %s", ca_file)
+            else:
+                # Geliştirme ortamı için: self-signed sertifikaları kabul et.
+                ssl_ctx.check_hostname = False
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+                logger.warning(
+                    "[CP-CONNECT] No CA file configured; disabling hostname check and certificate verification "
+                    "(development mode)."
+                )
+        except Exception as exc:
+            logger.exception("[CP-CONNECT] Failed to initialize TLS context: %s. Falling back to WS.", exc)
+            ssl_ctx = None
+
+    if ssl_ctx is not None:
+        ws: WebSocketClientProtocol = await websockets.connect(csms_url, ssl=ssl_ctx)
+    else:
+        ws: WebSocketClientProtocol = await websockets.connect(csms_url)
 
     cp = SimulatedChargePoint(cp_id, ws)
 
@@ -327,3 +359,4 @@ async def connect_charge_point(
     await cp.start_heartbeat_loop()
 
     return cp
+

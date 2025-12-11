@@ -1,0 +1,8 @@
+# PRIVATE KEYS DEFINITELY MUST NOT BE COMMITTED (private keyleri githuba commitleme)
+certs/*.key
+certs/*_key.pem
+certs/*.pem
+certs/*.pfx
+
+# allow README  readme dosyasına izin ver açıklama için
+!certs/README.md

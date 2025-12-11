@@ -2,6 +2,10 @@ import asyncio
 import logging
 from datetime import datetime
 from typing import Callable, Dict, Any, Optional
+import ssl
+import os
+from pathlib import Path
+
 
 import websockets
 from websockets.server import WebSocketServerProtocol
@@ -16,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 # Basit bir IDTag listesi. İleride bunu dosyadan / DB'den okuyabilirsin.
 VALID_TAGS: Dict[str, str] = {
-    "YUNUS_TAG": "Yunus Emeç",
-    "AYSE_TAG": "Ayşe Yılmaz",
+    "YUNUS_TAG": "Yunus Sunuy",
+    "AYSE_TAG": "Ayşe Kenefir",
     "TEST123": "Test Kullanıcısı",
 }
 
@@ -361,14 +365,63 @@ class CentralSystem:
         asyncio.create_task(csms.start())
     """
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 9000) -> None:
+    def __init__(
+        self,
+        host: str = "0.0.0.0",
+        port: int = 9000,
+        use_tls: bool = False,
+        certfile: Optional[str] = None,
+        keyfile: Optional[str] = None,
+        cafile: Optional[str] = None,
+    ) -> None:
         self.host = host
         self.port = port
+
+        # TLS / SSL yapılandırması
+        # use_tls True ise, sertifika dosyaları bulunursa WSS (TLS üzerinden WebSocket) ile çalışır.
+        # Aksi halde klasik WS (şifresiz) modda devam eder.
+        env_use_tls = os.getenv("CSMS_USE_TLS", "").lower() in ("1", "true", "yes")
+        self.use_tls: bool = use_tls or env_use_tls
+
+        # Sertifika yolları (parametre > env > varsayılan)
+        cert_path = Path(certfile) if certfile else Path(os.getenv("CSMS_CERT_FILE", "certs/csms_cert.pem"))
+        key_path = Path(keyfile) if keyfile else Path(os.getenv("CSMS_KEY_FILE", "certs/csms_key.pem"))
+        ca_path = Path(cafile) if cafile else (Path(os.getenv("CSMS_CA_FILE")) if os.getenv("CSMS_CA_FILE") else None)
+
+        self._ssl_context: Optional[ssl.SSLContext] = None
+
+        if self.use_tls:
+            try:
+                if cert_path.is_file() and key_path.is_file():
+                    ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                    # Geliştirme ortamı için: client sertifikası zorunlu değil.
+                    ctx.check_hostname = False
+                    ctx.verify_mode = ssl.CERT_NONE
+
+                    ctx.load_cert_chain(certfile=str(cert_path), keyfile=str(key_path))
+
+                    if ca_path and ca_path.is_file():
+                        ctx.load_verify_locations(cafile=str(ca_path))
+
+                    self._ssl_context = ctx
+                    logger.info("[CSMS] TLS ENABLED - cert=%s key=%s", cert_path, key_path)
+                else:
+                    logger.warning(
+                        "[CSMS] TLS is enabled but certificate files not found (cert=%s, key=%s). "
+                        "Falling back to plaintext WS.",
+                        cert_path,
+                        key_path,
+                    )
+                    self.use_tls = False
+            except Exception as exc:
+                logger.exception("[CSMS] TLS initialization failed: %s. Falling back to WS.", exc)
+                self.use_tls = False
 
         self.event_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None
 
         self._server: Optional[websockets.server.Serve] = None
         self._active_cps: Dict[str, CSMSChargePoint] = {}
+
 
     async def _heartbeat_watchdog(self) -> None:
         """
@@ -454,27 +507,36 @@ class CentralSystem:
 
     async def start(self) -> None:
         """
-        CSMS WebSocket server'ını başlatır. Bu fonksiyon await edildiğinde
-        server dinlemeye başlar ve asyncio event loop var oldukça ayakta kalır.
+        CSMS WebSocket server'ını başlatır.
+        - TLS açıksa WSS (wss://) olarak,
+        - Değilse WS (ws://) olarak dinler.
+        Ayrıca heartbeat_watchdog görevini de başlatır.
         """
-        logger.info("[CSMS] Server starting at %s:%s", self.host, self.port)
+        # Hangi şema ile başlayacağımıza karar ver (TLS varsa wss)
+        scheme = "wss" if self.use_tls and self._ssl_context is not None else "ws"
+        logger.info("[CSMS] Server starting at %s://%s:%s", scheme, self.host, self.port)
 
+        # WebSocket server'ı başlat (TLS için ssl parametresini veriyoruz)
         self._server = await websockets.serve(
             ws_handler=self._on_connect,
             host=self.host,
             port=self.port,
+            ssl=self._ssl_context,  # 🔴 KRİTİK: TLS burada devreye giriyor
         )
 
-        logger.info("[CSMS] Server started at ws://%s:%s", self.host, self.port)
+        logger.info("[CSMS] Server started at %s://%s:%s", scheme, self.host, self.port)
 
+        # Heartbeat watchdog görevini başlat
         watchdog_task = asyncio.create_task(self._heartbeat_watchdog())
 
         try:
+            # Server açık kaldığı sürece burada uyuyup bekliyoruz
             while True:
                 await asyncio.sleep(3600)
         except asyncio.CancelledError:
             logger.info("[CSMS] Server task cancelled, shutting down...")
         finally:
+            # Watchdog'u iptal et ve server'ı durdur
             watchdog_task.cancel()
             await self.stop()
 

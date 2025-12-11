@@ -44,6 +44,7 @@ async def run_simulation(
     duration: int,
     stations: int,
     output: str | None = None,
+    cp_list: list[str] | None = None,
 ) -> None:
     """
     Tüm simülasyonların ortak giriş noktası.
@@ -54,6 +55,8 @@ async def run_simulation(
         duration : step sayısı / saniye (senaryo yorumlar)
         stations : sanal şarj istasyonu sayısı
         output   : opsiyonel CSV adı (logs/ocpp altına yazılır)
+        cp_list  : opsiyonel CP ID listesi (örn: ["CP_001", "CP_003", "CP_005"])
+                   Verilmezse CP_001'den başlayarak stations kadar CP oluşturulur
 
     Senaryo modülünden beklenen fonksiyon imzası:
         async def run_scenario(
@@ -61,6 +64,7 @@ async def run_simulation(
             duration: int,
             stations: int,
             output_path: str,
+            cp_list: list[str] | None = None,
         ) -> None: ...
     """
     scenario = scenario.lower()
@@ -102,12 +106,18 @@ async def run_simulation(
     #    Buradan sonra iş charge_point + csms_server + scenario'da
     #    IDTag, MeterValues, TransactionId vs. orada üretilecek.
     # --------------------------------------------------------------
-    await run_scenario(
-        mode=mode,
-        duration=duration,
-        stations=stations,
-        output_path=str(output_path),
-    )
+    # cp_list parametresini senaryoya gönder (geriye uyumlu)
+    scenario_kwargs = {
+        "mode": mode,
+        "duration": duration,
+        "stations": stations,
+        "output_path": str(output_path),
+    }
+    # Eğer cp_list varsa ekle (yeni özellik)
+    if cp_list is not None:
+        scenario_kwargs["cp_list"] = cp_list
+    
+    await run_scenario(**scenario_kwargs)
 
     print()
     print("[✓] Senaryo tamamlandı.")
@@ -148,6 +158,14 @@ def parse_args():
             "(varsayılan: logs/ocpp/<senaryo>_<mod>_<tarih>.csv)"
         ),
     )
+    parser.add_argument(
+        "--cp-list",
+        nargs="+",
+        help=(
+            "Opsiyonel: Kullanılacak CP ID listesi (örn: --cp-list CP_001 CP_003 CP_005). "
+            "Verilmezse CP_001'den başlayarak stations kadar CP oluşturulur."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -167,6 +185,7 @@ if __name__ == "__main__":
                 duration=args.duration,
                 stations=args.stations,
                 output=args.output,
+                cp_list=getattr(args, "cp_list", None),
             )
         )
     except KeyboardInterrupt:
