@@ -1,0 +1,9 @@
+{
+  "attack_start_s":null,
+  "dominant_freq_Hz":1.975308642,
+  "max_current_A":15.4411222,
+  "mean_before_A":7.9225909953,
+  "mean_during_A":7.3038353875,
+  "pct_time_anomalous":0.9900990099,
+  "thd":0.1562264353
+}

@@ -1,0 +1,1 @@
+timestamp,cp_id,transaction_id,connector_id,power_kw,current_a,voltage_v,soc_percent,raw_payload

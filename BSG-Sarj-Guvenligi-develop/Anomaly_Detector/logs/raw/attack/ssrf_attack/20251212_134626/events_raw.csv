@@ -1,0 +1,6 @@
+timestamp,cp_id,message_type,raw_payload
+2025-12-12T13:46:27.408583,CP_001,BootNotification,"{""cp_id"": ""CP_001"", ""vendor"": ""AegisChargeSim"", ""model"": ""SimulatedModel"", ""payload"": {}, ""message_type"": ""BootNotification"", ""timestamp"": ""2025-12-12T13:46:27.408583""}"
+2025-12-12T13:46:27+00:00,CP_001,StatusNotification,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-12T13:46:27+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-12T13:46:27.617345,CP_001,Authorize,"{""cp_id"": ""CP_001"", ""id_tag"": ""SSRF_TEST_USER"", ""status"": ""Invalid"", ""authorized"": false, ""timestamp"": ""2025-12-12T13:46:27.617345"", ""message_type"": ""Authorize""}"
+2025-12-12T13:46:37.490589,CP_001,Heartbeat,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-12T13:46:37.490589""}"
+2025-12-12T13:46:47.515709,CP_001,Heartbeat,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-12T13:46:47.515709""}"

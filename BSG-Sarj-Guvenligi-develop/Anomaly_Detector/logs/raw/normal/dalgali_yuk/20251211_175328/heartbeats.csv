@@ -1,0 +1,5 @@
+timestamp,cp_id,raw_payload
+2025-12-11T17:53:41.972474,CP_002,"{""cp_id"": ""CP_002"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-11T17:53:41.972474""}"
+2025-12-11T17:53:41.974365,CP_001,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-11T17:53:41.974365""}"
+2025-12-11T17:53:52.003937,CP_001,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-11T17:53:52.003937""}"
+2025-12-11T17:53:52.005121,CP_002,"{""cp_id"": ""CP_002"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-11T17:53:52.005121""}"
