@@ -10,38 +10,20 @@ import pandas as pd
 # AYARLAR
 # ------------------------------------------------------------------------------
 
-# logs klasörünün kökü (projenin kökünden çalıştırdığını varsayıyorum)
 LOGS_ROOT = Path("logs")
-
-# OCPP loglarının olduğu klasör
 OCPP_DIR = LOGS_ROOT / "ocpp"
-
-# AI ekibine verilecek dataset'lerin yazılacağı klasör
 AI_DIR = LOGS_ROOT / "ai"
 
-# Hangi kolonlar AI ekibine gitsin?
-# (Sen istersen burayı sadeleştirirsin; şimdilik hepsi dursun, raw_payload opsiyonel)
-BASE_COLUMNS: List[str] = [
-    "timestamp",
-    "charge_point_id",
-    "scenario",
-    "mode",
-    "step",
-    "message_type",
-    "transaction_id",
-    "connector_id",
-    "id_tag",
-    "power_kw",
-    "current_a",
-    "voltage_v",
-    "soc_percent",
-    "label",
-    # "raw_payload",  # aşağıdaki flag'e göre eklenecek
+# AI ekibinin istediği kolon sırası ve isimleri (BİREBİR!)
+AI_COLUMNS: List[str] = [
+    "Timestamp",
+    "Transaction_ID",
+    "Voltage",
+    "Current_Import",
+    "Power_Import",
+    "SoC",
+    "Label",
 ]
-
-# AI dataset içinde raw_payload dursun mu?
-KEEP_RAW_PAYLOAD = False  # True yaparsan raw_payload da gelir
-
 
 # ------------------------------------------------------------------------------
 # Yardımcı fonksiyonlar
@@ -49,21 +31,13 @@ KEEP_RAW_PAYLOAD = False  # True yaparsan raw_payload da gelir
 
 def _is_unified_dataset_file(path: Path) -> bool:
     """
-    logs/ocpp içindeki CSV'lerden:
-      - *_meter_values.csv
-      - *_status_notifications.csv
-      - *_transactions.csv
-      - *_heartbeats.csv
-      - *_events_raw.csv
-    gibi ham tablolara DEĞİL,
-    sadece birleşik (eski pipeline için üretilen) CSV'lere bakmak istiyoruz.
+    logs/ocpp içindeki birleşik dataset dosyalarını seçer.
+    Ham tabloları (meter_values, heartbeats vs.) hariç tutar.
     """
     if path.suffix.lower() != ".csv":
         return False
 
-    stem = path.stem  # uzantısız dosya adı
-
-    # Ham tablolara ait suffix'ler
+    stem = path.stem
     exclude_suffixes = [
         "_meter_values",
         "_status_notifications",
@@ -71,7 +45,6 @@ def _is_unified_dataset_file(path: Path) -> bool:
         "_heartbeats",
         "_events_raw",
     ]
-
     if any(stem.endswith(suf) for suf in exclude_suffixes):
         return False
 
@@ -79,19 +52,14 @@ def _is_unified_dataset_file(path: Path) -> bool:
 
 
 def _load_unified_csvs(ocpp_dir: Path) -> pd.DataFrame:
-    """
-    logs/ocpp altındaki tüm birleşik dataset CSV'lerini okuyup
-    tek bir DataFrame'de birleştirir.
-    """
     if not ocpp_dir.exists():
         raise FileNotFoundError(f"OCPP klasörü bulunamadı: {ocpp_dir}")
 
     csv_files = [p for p in ocpp_dir.glob("*.csv") if _is_unified_dataset_file(p)]
-
     if not csv_files:
         raise FileNotFoundError(
             f"{ocpp_dir} içinde birleşik dataset CSV dosyası bulunamadı. "
-            f"Önce run_simulation ile bir senaryo çalıştırdığından emin ol."
+            f"Önce run_simulation ile senaryo çalıştır."
         )
 
     print(f"[INFO] {len(csv_files)} birleşik CSV bulundu:")
@@ -102,7 +70,7 @@ def _load_unified_csvs(ocpp_dir: Path) -> pd.DataFrame:
     for path in csv_files:
         try:
             df = pd.read_csv(path)
-            df["__source_file"] = str(path)  # istersek debug için
+            df["__source_file"] = str(path)
             frames.append(df)
         except Exception as e:
             print(f"[WARN] {path} okunurken hata: {e}")
@@ -112,83 +80,106 @@ def _load_unified_csvs(ocpp_dir: Path) -> pd.DataFrame:
 
     all_df = pd.concat(frames, ignore_index=True)
     print(f"[INFO] Toplam kayıt sayısı: {len(all_df)}")
-
     return all_df
 
 
-def _prepare_ai_dataset(all_df: pd.DataFrame) -> pd.DataFrame:
+def _to_ai_format(all_df: pd.DataFrame) -> pd.DataFrame:
     """
-    AI ekibi için kolonları düzenler:
-      - Gereksiz kolonları at
-      - Eksik kolonları varsa uyarı ver
-      - (İstersen burada feature engineering de yapılabilir)
+    AI ekibine GÖNDERİLECEK TEMİZ DATASET
+
+    ŞARTLAR:
+    - Transaction_ID dolu olacak
+    - Voltage / Current / Power / SoC dolu olacak
+    - Sadece gerçek şarj ölçümleri (MeterValues mantığı)
     """
 
-    columns = list(BASE_COLUMNS)
-    if KEEP_RAW_PAYLOAD:
-        if "raw_payload" not in columns:
-            columns.append("raw_payload")
+    required_src = [
+        "timestamp",
+        "transaction_id",
+        "voltage_v",
+        "current_a",
+        "power_kw",
+        "soc_percent",
+        "label",
+    ]
 
-    # Veri setinde kolon eksikse kırılma olmasın diye kontrol
-    missing = [c for c in columns if c not in all_df.columns]
+    missing = [c for c in required_src if c not in all_df.columns]
     if missing:
-        print(f"[WARN] Dataset içinde eksik kolonlar var: {missing}")
-        print("       Bu kolonlar çıktıda yer almayacak.")
+        raise RuntimeError(f"Gerekli kolon(lar) eksik: {missing}")
 
-    final_cols = [c for c in columns if c in all_df.columns]
+    # -----------------------------
+    # 🔥 TEMİZLEME (KRİTİK KISIM)
+    # -----------------------------
+    df = all_df.copy()
 
-    ai_df = all_df[final_cols].copy()
+    df = df.dropna(subset=[
+        "transaction_id",
+        "voltage_v",
+        "current_a",
+        "power_kw",
+        "soc_percent"
+    ])
 
-    # Binary label (AI ekibi 'normal' / 'attack' istiyorsa)
-    # label kolonu:
-    #   - normal → "normal"
-    #   - diğer her şey → "attack"
-    if "label" in ai_df.columns:
-        ai_df["binary_label"] = ai_df["label"].apply(
-            lambda x: "normal" if str(x).lower() == "normal" else "attack"
-        )
+    # transaction_id string boşluk kontrolü
+    df = df[df["transaction_id"].astype(str).str.strip() != ""]
 
+    # Güvenlik: negatif / anlamsız değerleri de at
+    df = df[
+        (df["voltage_v"] > 0) &
+        (df["current_a"] >= 0) &
+        (df["power_kw"] >= 0) &
+        (df["soc_percent"] >= 0)
+    ]
+
+    print(f"[INFO] AI için temizlenen kayıt sayısı: {len(df)}")
+
+    # -----------------------------
+    # 🎯 AI FORMATINA MAP
+    # -----------------------------
+    ai_df = pd.DataFrame()
+    ai_df["Timestamp"] = df["timestamp"]
+    ai_df["Transaction_ID"] = df["transaction_id"]
+    ai_df["Voltage"] = df["voltage_v"]
+    ai_df["Current_Import"] = df["current_a"]
+    ai_df["Power_Import"] = df["power_kw"]
+    ai_df["SoC"] = df["soc_percent"]
+
+    # Label normalize
+    ai_df["Label"] = df["label"].apply(
+        lambda x: "normal" if str(x).lower() == "normal" else "attack"
+    )
+
+    ai_df = ai_df[AI_COLUMNS]
     return ai_df
 
 
 def main() -> None:
     print("==============================================")
-    print("  OCPP LOG'LARINDAN AI DATASET OLUŞTURULUYOR  ")
+    print("      AI FORMATINDA DATASET ÜRETİLİYOR        ")
     print("==============================================")
 
-    # logs/ai klasörünü oluştur
     AI_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"[INFO] AI dataset klasörü: {AI_DIR}")
+    print(f"[INFO] AI klasörü: {AI_DIR}")
 
-    # 1) logs/ocpp altındaki birleşik CSV'leri yükle
     all_df = _load_unified_csvs(OCPP_DIR)
+    ai_df = _to_ai_format(all_df)
 
-    # 2) AI dataset için kolonları düzenle
-    ai_df = _prepare_ai_dataset(all_df)
+    out_all = AI_DIR / "ai_dataset_all.csv"
+    out_normal = AI_DIR / "ai_dataset_normal.csv"
+    out_attack = AI_DIR / "ai_dataset_attack.csv"
 
-    print(f"[INFO] AI dataset satır sayısı: {len(ai_df)}")
+    ai_df.to_csv(out_all, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    print(f"[OK] Tüm kayıtlar: {out_all} (satır: {len(ai_df)})")
 
-    # 3) Çıktıları kaydet
-    all_path = AI_DIR / "ocpp_dataset_all.csv"
-    normal_path = AI_DIR / "ocpp_dataset_normal.csv"
-    attack_path = AI_DIR / "ocpp_dataset_attack.csv"
+    normal_df = ai_df[ai_df["Label"] == "normal"]
+    attack_df = ai_df[ai_df["Label"] == "attack"]
 
-    ai_df.to_csv(all_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
-    print(f"[OK] Tüm kayıtlar: {all_path}")
+    normal_df.to_csv(out_normal, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    attack_df.to_csv(out_attack, index=False, quoting=csv.QUOTE_NONNUMERIC)
 
-    if "binary_label" in ai_df.columns:
-        normal_df = ai_df[ai_df["binary_label"] == "normal"]
-        attack_df = ai_df[ai_df["binary_label"] == "attack"]
-
-        normal_df.to_csv(normal_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
-        attack_df.to_csv(attack_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
-
-        print(f"[OK] Normal kayıtlar: {normal_path} (satır: {len(normal_df)})")
-        print(f"[OK] Attack kayıtlar:  {attack_path} (satır: {len(attack_df)})")
-    else:
-        print("[WARN] 'label' kolonu bulunamadı, normal/attack ayrımı yapılamadı.")
-
-    print("[DONE] Dataset üretimi tamam.")
+    print(f"[OK] Normal: {out_normal} (satır: {len(normal_df)})")
+    print(f"[OK] Attack: {out_attack} (satır: {len(attack_df)})")
+    print("[DONE] AI dataset üretimi tamam.")
 
 
 if __name__ == "__main__":
