@@ -1,0 +1,79 @@
+graph TB
+    subgraph "Fiziksel Katman (IEC 61851)"
+        EV[Elektrikli Araç<br/>IEC 61851 Type 2]
+        CP[Charging Point<br/>Şarj Pistonu]
+        PM[Power Meter<br/>Enerji Ölçer]
+        EV -->|CP/PP Sinyal| CP
+    end
+    
+    subgraph "Şarj İstasyonu (Charge Point)"
+        CS[Charge Station<br/>OCPP 1.6J Client]
+        FW[Local Firewall]
+        IDS[IDS/IPS Module]
+        LOG[Log Collector]
+        
+        CP -->|IEC 61851 Kontrol| CS
+        PM -->|Ölçüm Verileri| CS
+        CS <-->|İzleme| IDS
+        CS -->|Loglar| LOG
+    end
+    
+    subgraph "Ağ Katmanı"
+        RTR[Router/Gateway<br/>NAT + Firewall]
+        VPN[VPN Gateway<br/>TLS 1.3]
+        
+        CS -->|WebSocket/TLS| FW
+        FW -->|Şifreli Trafik| RTR
+        RTR <-->|HTTPS/WSS| VPN
+    end
+    
+    subgraph "DMZ Zone"
+        LB[Load Balancer<br/>TLS Termination]
+        WAF[Web Application<br/>Firewall]
+        
+        VPN -->|TLS 1.3| WAF
+        WAF -->|İçerik Filtreleme| LB
+    end
+    
+    subgraph "Bulut Sunucu (CSMS)"
+        API[API Gateway<br/>Rate Limiting]
+        OCPP[OCPP 1.6J Server<br/>Central System]
+        AUTH[Authentication<br/>Service]
+        ADS[Anomaly Detection<br/>Dalgalı Yük Analizi]
+        DB[(Database<br/>Encrypted)]
+        SIEM[SIEM System<br/>Güvenlik İzleme]
+        
+        LB -->|WebSocket/TLS| API
+        API -->|OCPP Messages| OCPP
+        OCPP <-->|Kimlik Doğrulama| AUTH
+        OCPP -->|Yük Verileri| ADS
+        OCPP <-->|Veri Saklama| DB
+        ADS -->|Anomali Alarmları| SIEM
+        LOG -.->|Merkezi Loglama| SIEM
+    end
+    
+    subgraph "Mobil/Web Uygulama"
+        APP[Mobil App<br/>iOS/Android]
+        WEB[Web Portal]
+        
+        APP -->|HTTPS/REST API| API
+        WEB -->|HTTPS| API
+    end
+    
+    subgraph "Yönetim ve İzleme"
+        ADMIN[Admin Panel]
+        MON[Monitoring Dashboard]
+        
+        ADMIN -->|HTTPS + 2FA| API
+        SIEM -->|Güvenlik Verileri| MON
+        ADS -->|Anomali Metrikleri| MON
+    end
+    
+    style EV fill:#e1f5ff
+    style CS fill:#fff3e0
+    style RTR fill:#ffebee
+    style OCPP fill:#e8f5e9
+    style ADS fill:#fce4ec
+    style SIEM fill:#f3e5f5
+    style WAF fill:#ffebee
+    style VPN fill:#ffebee

@@ -1,0 +1,244 @@
+
+stateDiagram-v2
+    [*] --> NormalOperation: Sistem Başlatıldı
+    
+    state NormalOperation {
+        [*] --> BaselineEstablishment
+        
+        state BaselineEstablishment {
+            [*] --> HistoricalDataCollection
+            HistoricalDataCollection --> PatternLearning: Geçmiş Veri Toplandı
+            PatternLearning --> NormalProfileCreation: Patern Öğrenildi
+            NormalProfileCreation --> ThresholdCalculation: Normal Profil Oluşturuldu
+            ThresholdCalculation --> BaselineReady: Eşikler Hesaplandı
+        }
+        
+        BaselineEstablishment --> ContinuousMonitoring: Baseline Hazır
+        
+        state ContinuousMonitoring {
+            [*] --> RealtimeDataCollection
+            RealtimeDataCollection --> StatisticalAnalysis: Anlık Veri Toplanıyor
+            
+            state StatisticalAnalysis {
+                [*] --> MeanCalculation
+                MeanCalculation --> VarianceAnalysis: Ortalama Hesaplandı
+                VarianceAnalysis --> StandardDeviationCheck: Varyans Analizi
+                StandardDeviationCheck --> TrendAnalysis: Standart Sapma Kontrolü
+                TrendAnalysis --> AnalysisComplete: Trend Analizi
+            }
+            
+            StatisticalAnalysis --> FrequencyDomainAnalysis: İstatistik Tamamlandı
+            
+            state FrequencyDomainAnalysis {
+                [*] --> FFTTransform
+                FFTTransform --> HarmonicDetection: FFT Dönüşümü
+                HarmonicDetection --> SpectralAnalysis: Harmonik Tespiti
+                SpectralAnalysis --> FrequencyAnomalyCheck: Spektral Analiz
+            }
+            
+            FrequencyDomainAnalysis --> RealtimeDataCollection: Devam Et
+        }
+    }
+    
+    NormalOperation --> AnomalyDetectionTriggered: Anormallik Şüphesi
+    
+    state AnomalyDetectionTriggered {
+        [*] --> InitialAlert
+        InitialAlert --> ConfidenceScoring: İlk Alarm
+        
+        state ConfidenceScoring {
+            [*] --> MultiMetricEvaluation
+            MultiMetricEvaluation --> CorrelationAnalysis: Çoklu Metrik Değerlendirme
+            CorrelationAnalysis --> BayesianInference: Korelasyon Analizi
+            BayesianInference --> ConfidenceCalculated: Bayesian Çıkarım
+        }
+        
+        ConfidenceScoring --> SeverityClassification: Güven Skoru Hesaplandı
+        
+        state SeverityClassification {
+            [*] --> LowSeverity
+            [*] --> MediumSeverity
+            [*] --> HighSeverity
+            [*] --> CriticalSeverity
+            
+            LowSeverity --> ClassificationComplete: Düşük Önem
+            MediumSeverity --> ClassificationComplete: Orta Önem
+            HighSeverity --> ClassificationComplete: Yüksek Önem
+            CriticalSeverity --> ClassificationComplete: Kritik Önem
+        }
+    }
+    
+    AnomalyDetectionTriggered --> ThreatIntelligence: Sınıflandırma Tamamlandı
+    AnomalyDetectionTriggered --> NormalOperation: Yanlış Alarm
+    
+    state ThreatIntelligence {
+        [*] --> SignatureMatching
+        SignatureMatching --> BehavioralAnalysis: İmza Eşleştirme
+        
+        state BehavioralAnalysis {
+            [*] --> PatternRecognition
+            PatternRecognition --> AttackVectorIdentification: Patern Tanıma
+            AttackVectorIdentification --> TTPAnalysis: Saldırı Vektörü Belirlendi
+            TTPAnalysis --> AttributionAttempt: TTP Analizi
+        }
+        
+        BehavioralAnalysis --> ThreatConfirmed: Davranış Analizi Tamamlandı
+    }
+    
+    ThreatIntelligence --> ResponseStrategy: Tehdit Onaylandı
+    
+    state ResponseStrategy {
+        [*] --> StrategySelection
+        
+        state StrategySelection {
+            [*] --> PassiveMonitoring
+            [*] --> ActiveMitigation
+            [*] --> AggressiveContainment
+            
+            PassiveMonitoring --> StrategyChosen: Düşük Önem İçin
+            ActiveMitigation --> StrategyChosen: Orta Önem İçin
+            AggressiveContainment --> StrategyChosen: Yüksek Önem İçin
+        }
+        
+        StrategySelection --> ActionPlanGeneration: Strateji Seçildi
+        
+        state ActionPlanGeneration {
+            [*] --> ResourceAllocation
+            ResourceAllocation --> PriorityAssignment: Kaynak Tahsisi
+            PriorityAssignment --> TimelineEstablishment: Öncelik Atandı
+            TimelineEstablishment --> PlanReady: Zaman Çizelgesi Oluşturuldu
+        }
+    }
+    
+    ResponseStrategy --> MitigationExecution: Plan Hazır
+    
+    state MitigationExecution {
+        [*] --> ImmediateActions
+        
+        state ImmediateActions {
+            [*] --> RateLimiting
+            RateLimiting --> LoadThrottling: Hız Sınırlama
+            LoadThrottling --> ConnectionFiltering: Yük Azaltma
+            ConnectionFiltering --> ImmediateComplete: Bağlantı Filtreleme
+        }
+        
+        ImmediateActions --> ShortTermDefense: Acil Önlemler Alındı
+        
+        state ShortTermDefense {
+            [*] --> TrafficShaping
+            TrafficShaping --> AdaptiveFiltering: Trafik Şekillendirme
+            AdaptiveFiltering --> DynamicThresholdAdjustment: Adaptif Filtreleme
+            DynamicThresholdAdjustment --> ShortTermComplete: Dinamik Eşik Ayarı
+        }
+        
+        ShortTermDefense --> LongTermMitigation: Kısa Vade Tamamlandı
+        
+        state LongTermMitigation {
+            [*] --> SourceIsolation
+            SourceIsolation --> NetworkSegmentation: Kaynak İzolasyonu
+            NetworkSegmentation --> PolicyEnforcement: Ağ Segmentasyonu
+            PolicyEnforcement --> LongTermComplete: Politika Uygulandı
+        }
+    }
+    
+    MitigationExecution --> ForensicAnalysis: Önlemler Alındı
+    
+    state ForensicAnalysis {
+        [*] --> EvidenceCollection
+        
+        state EvidenceCollection {
+            [*] --> LogAggregation
+            LogAggregation --> NetworkTrafficCapture: Log Toplama
+            NetworkTrafficCapture --> MemoryDump: Ağ Trafiği Yakalandı
+            MemoryDump --> ArtifactPreservation: Bellek Dökümü
+            ArtifactPreservation --> EvidenceSecured: Kanıt Korundu
+        }
+        
+        EvidenceCollection --> RootCauseAnalysis: Kanıt Toplandı
+        
+        state RootCauseAnalysis {
+            [*] --> TimelineReconstruction
+            TimelineReconstruction --> VectorAnalysis: Zaman Çizelgesi Yeniden Yapılandı
+            VectorAnalysis --> VulnerabilityIdentification: Vektör Analizi
+            VulnerabilityIdentification --> ImpactAssessment: Zafiyet Belirlendi
+            ImpactAssessment --> RootCauseFound: Etki Değerlendirmesi
+        }
+        
+        RootCauseAnalysis --> ReportGeneration: Kök Neden Bulundu
+        
+        state ReportGeneration {
+            [*] --> ExecutiveSummary
+            ExecutiveSummary --> TechnicalDetails: Yönetici Özeti
+            TechnicalDetails --> RecommendationsCreation: Teknik Detaylar
+            RecommendationsCreation --> ReportComplete: Öneriler Oluşturuldu
+        }
+    }
+    
+    ForensicAnalysis --> RecoveryPhase: Analiz Tamamlandı
+    
+    state RecoveryPhase {
+        [*] --> SystemRestoration
+        
+        state SystemRestoration {
+            [*] --> ServiceValidation
+            ServiceValidation --> IntegrityCheck: Servis Doğrulama
+            IntegrityCheck --> ConfigurationReview: Bütünlük Kontrolü
+            ConfigurationReview --> RestorationComplete: Yapılandırma İncelemesi
+        }
+        
+        SystemRestoration --> SecurityHardening: Sistem Geri Yüklendi
+        
+        state SecurityHardening {
+            [*] --> PatchManagement
+            PatchManagement --> ConfigurationUpdate: Yama Yönetimi
+            ConfigurationUpdate --> PolicyRefinement: Yapılandırma Güncellendi
+            PolicyRefinement --> HardeningComplete: Politika İyileştirme
+        }
+        
+        SecurityHardening --> MonitoringEnhancement: Güvenlik Sertleştirildi
+        
+        state MonitoringEnhancement {
+            [*] --> NewSignatureDeployment
+            NewSignatureDeployment --> ThresholdTuning: Yeni İmza Dağıtıldı
+            ThresholdTuning --> AlertOptimization: Eşik Ayarı
+            AlertOptimization --> EnhancementComplete: Alarm Optimizasyonu
+        }
+    }
+    
+    RecoveryPhase --> LessonsLearned: İyileştirme Tamamlandı
+    
+    state LessonsLearned {
+        [*] --> PostIncidentReview
+        PostIncidentReview --> TeamDebriefing: Olay Sonrası İnceleme
+        TeamDebriefing --> ProcessImprovement: Ekip Bilgilendirme
+        ProcessImprovement --> KnowledgeBaseUpdate: Süreç İyileştirme
+        KnowledgeBaseUpdate --> TrainingUpdate: Bilgi Tabanı Güncellendi
+        TrainingUpdate --> LessonsDocumented: Eğitim Güncellendi
+    }
+    
+    LessonsLearned --> NormalOperation: Dersler Belgelendi
+    
+    MitigationExecution --> EscalationRequired: Önlemler Yetersiz
+    
+    state EscalationRequired {
+        [*] --> IncidentEscalation
+        IncidentEscalation --> ManagementNotification: Olay Yükseltildi
+        ManagementNotification --> ExternalSupport: Yönetime Bildirildi
+        ExternalSupport --> CrisisManagement: Dış Destek Çağrıldı
+        CrisisManagement --> EmergencyProtocol: Kriz Yönetimi
+        EmergencyProtocol --> SystemShutdown: Acil Durum Protokolü
+    }
+    
+    EscalationRequired --> EmergencyRecovery: Sistem Kapatıldı
+    
+    state EmergencyRecovery {
+        [*] --> DisasterRecoveryPlan
+        DisasterRecoveryPlan --> BackupActivation: Felaket Kurtarma Planı
+        BackupActivation --> FailoverExecution: Yedek Aktivasyonu
+        FailoverExecution --> BusinessContinuity: Failover Yürütüldü
+        BusinessContinuity --> EmergencyComplete: İş Sürekliliği
+    }
+    
+    EmergencyRecovery --> RecoveryPhase: Acil Durum Atlatıldı
+    
+    [*]
