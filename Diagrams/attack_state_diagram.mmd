@@ -1,0 +1,172 @@
+stateDiagram-v2
+    [*] --> Reconnaissance: Saldırı Başlangıcı
+    
+    state Reconnaissance {
+        [*] --> TargetIdentification
+        TargetIdentification --> NetworkMapping: Hedef Tespit Edildi
+        NetworkMapping --> ProtocolAnalysis: Ağ Haritası Çıkarıldı
+        
+        state ProtocolAnalysis {
+            [*] --> OCPPVersionDetection
+            OCPPVersionDetection --> MessagePatternAnalysis: OCPP 1.6J Tespit
+            MessagePatternAnalysis --> TimingAnalysis: Mesaj Yapısı Öğrenildi
+            TimingAnalysis --> BaselineEstablishment: Zamanlama Bilgisi Toplandı
+        }
+        
+        ProtocolAnalysis --> VulnerabilityAssessment: Protokol Analizi Tamamlandı
+        
+        state VulnerabilityAssessment {
+            [*] --> AuthenticationWeakness
+            AuthenticationWeakness --> RateLimitCheck: Kimlik Doğrulama Zayıflığı
+            RateLimitCheck --> AnomalyThresholdProbe: Rate Limit Testi
+            AnomalyThresholdProbe --> DefenseMapping: Anomali Eşikleri Belirlendi
+        }
+    }
+    
+    Reconnaissance --> PreparationPhase: İstihbarat Toplandı
+    
+    state PreparationPhase {
+        [*] --> AttackVectorSelection
+        AttackVectorSelection --> PayloadCrafting: Saldırı Vektörü Seçildi
+        
+        state PayloadCrafting {
+            [*] --> WaveformDesign
+            WaveformDesign --> FrequencySelection: Dalga Formu Tasarlandı
+            FrequencySelection --> AmplitudeCalibration: Frekans Belirlendi
+            AmplitudeCalibration --> PayloadReady: Genlik Ayarlandı
+        }
+        
+        PayloadCrafting --> InfrastructureSetup: Payload Hazır
+        
+        state InfrastructureSetup {
+            [*] --> BotnetDeployment
+            BotnetDeployment --> CommandControlSetup: Botnet Kuruldu
+            CommandControlSetup --> BackupChannels: C2 Sunucusu Hazır
+            BackupChannels --> InfraReady: Yedek Kanallar Açıldı
+        }
+    }
+    
+    PreparationPhase --> InitialProbe: Hazırlık Tamamlandı
+    
+    state InitialProbe {
+        [*] --> StealthTest
+        StealthTest --> SinglePointTest: Gizli Test Başladı
+        SinglePointTest --> ResponseAnalysis: Tek Nokta Test Edildi
+        ResponseAnalysis --> DetectionCheck: Yanıt Analiz Edildi
+        DetectionCheck --> ProbeSuccess: Tespit Edilmedi
+        DetectionCheck --> AbortMission: Tespit Edildi
+    }
+    
+    InitialProbe --> PatternInjection: Test Başarılı
+    InitialProbe --> [*]: Görev İptal
+    
+    state PatternInjection {
+        [*] --> LowIntensityWave
+        
+        state LowIntensityWave {
+            [*] --> SlowRampUp
+            SlowRampUp --> SubThresholdOscillation: Yavaş Artış
+            SubThresholdOscillation --> PatternEstablishment: Eşik Altı Salınım
+            PatternEstablishment --> StabilityCheck: Patern Yerleşti
+        }
+        
+        LowIntensityWave --> MediumIntensityWave: Tespit Edilmedi
+        
+        state MediumIntensityWave {
+            [*] --> FrequencyModulation
+            FrequencyModulation --> AmplitudeIncrease: Frekans Modülasyonu
+            AmplitudeIncrease --> HarmonicInjection: Genlik Artırıldı
+            HarmonicInjection --> ResonanceSearch: Harmonik Enjekte Edildi
+        }
+        
+        MediumIntensityWave --> HighIntensityWave: Tespit Edilmedi
+        
+        state HighIntensityWave {
+            [*] --> AggressiveOscillation
+            AggressiveOscillation --> PeakLoadGeneration: Agresif Salınım
+            PeakLoadGeneration --> SustainedAttack: Pik Yük Oluşturuldu
+        }
+    }
+    
+    PatternInjection --> EscalationPhase: Patern Yerleşti
+    PatternInjection --> DetectedDuringInjection: Anomali Algılandı
+    
+    state EscalationPhase {
+        [*] --> CoordinatedAttack
+        
+        state CoordinatedAttack {
+            [*] --> MultiPointSync
+            MultiPointSync --> LoadMultiplier: Çoklu Nokta Senkronize
+            LoadMultiplier --> CascadeEffect: Yük Çarpanı Aktif
+            CascadeEffect --> GridImpact: Kademeli Etki Başladı
+        }
+        
+        CoordinatedAttack --> PersistenceMode: Grid Etkisi Görüldü
+        
+        state PersistenceMode {
+            [*] --> AdaptivePattern
+            AdaptivePattern --> EvasionTechniques: Adaptif Patern
+            EvasionTechniques --> PolymorphicWaveform: Kaçınma Teknikleri
+            PolymorphicWaveform --> ContinuousEvolution: Polimorfik Dalga
+        }
+    }
+    
+    EscalationPhase --> CriticalImpact: Maksimum Etki
+    EscalationPhase --> DetectedDuringEscalation: Tespit Edildi
+    
+    state CriticalImpact {
+        [*] --> SystemOverload
+        SystemOverload --> GridInstability: Sistem Aşırı Yüklendi
+        GridInstability --> CascadeFailure: Şebeke İstikrarsız
+        CascadeFailure --> MissionAccomplished: Kademeli Arıza
+    }
+    
+    state DetectedDuringInjection {
+        [*] --> EvasionAttempt
+        EvasionAttempt --> PatternMorphing: Kaçınma Denemesi
+        PatternMorphing --> FrequencyShift: Patern Değiştirme
+        FrequencyShift --> EvasionSuccess: Frekans Kayması
+        FrequencyShift --> EvasionFailed: Kaçınamadı
+        EvasionSuccess --> PatternInjection: Tekrar Dene
+    }
+    
+    state DetectedDuringEscalation {
+        [*] --> CountermeasureDetection
+        CountermeasureDetection --> AdaptiveResponse: Karşı Önlem Tespit
+        AdaptiveResponse --> AlternativeVector: Adaptif Yanıt
+        AlternativeVector --> VectorSuccess: Alternatif Vektör
+        AlternativeVector --> VectorFailed: Başarısız
+        VectorSuccess --> EscalationPhase: Devam Et
+    }
+    
+    DetectedDuringInjection --> Containment: Kaçınamadı
+    DetectedDuringEscalation --> Containment: Başarısız
+    
+    state Containment {
+        [*] --> IsolationDetected
+        IsolationDetected --> CommunicationCut: İzolasyon Tespit Edildi
+        CommunicationCut --> FallbackActivation: İletişim Kesildi
+        FallbackActivation --> FallbackSuccess: Yedek Kanal Dene
+        FallbackActivation --> FallbackFailed: Yedek Yok
+        FallbackSuccess --> PersistenceMode: Devam Et
+    }
+    
+    Containment --> MissionAborted: Yedek Yok
+    CriticalImpact --> MissionCompleted: Hedef Başarıldı
+    
+    state MissionAborted {
+        [*] --> TraceRemoval
+        TraceRemoval --> LogWiping: İz Kaldırma
+        LogWiping --> BackdoorPlanting: Log Silme
+        BackdoorPlanting --> ExitStrategy: Arka Kapı Bırakma
+    }
+    
+    state MissionCompleted {
+        [*] --> DamageAssessment
+        DamageAssessment --> ExfiltrationPrep: Hasar Değerlendirme
+        ExfiltrationPrep --> DataExfiltration: Çıkış Hazırlığı
+        DataExfiltration --> CleanupPhase: Veri Sızdırma
+    }
+    
+    MissionAborted --> [*]: Saldırı Sonlandı
+    MissionCompleted --> [*]: Saldırı Başarılı
