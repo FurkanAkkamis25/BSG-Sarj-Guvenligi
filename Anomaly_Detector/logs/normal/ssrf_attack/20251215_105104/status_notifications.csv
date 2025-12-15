@@ -1,0 +1,6 @@
+timestamp,cp_id,connector_id,status,error_code,raw_payload
+2025-12-15T10:51:05+00:00,CP_001,1,Available,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T10:51:05+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T10:51:05+00:00,CP_001,1,Preparing,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T10:51:05+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T10:51:05+00:00,CP_001,1,Charging,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T10:51:05+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T10:56:27+00:00,CP_001,1,Finishing,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T10:56:27+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T10:56:27+00:00,CP_001,1,Available,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T10:56:27+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
