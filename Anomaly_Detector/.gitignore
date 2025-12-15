@@ -6,3 +6,5 @@ certs/*.pfx
 
 # allow README  readme dosyasına izin ver açıklama için
 !certs/README.md
+
+githubOrnek/

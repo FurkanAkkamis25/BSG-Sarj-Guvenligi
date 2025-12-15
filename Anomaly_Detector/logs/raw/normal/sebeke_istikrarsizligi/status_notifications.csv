@@ -1,51 +1,51 @@
-Timestamp,Connector_ID,Status,Error_Code,Label
-2025-12-11T21:57:34+00:00,1,Available,NoError,normal
-2025-12-11T21:57:34+00:00,1,Available,NoError,normal
-2025-12-11T21:57:34+00:00,1,Available,NoError,normal
-2025-12-11T21:57:34+00:00,1,Available,NoError,normal
-2025-12-11T21:57:34+00:00,1,Available,NoError,normal
-2025-12-11T21:57:35+00:00,1,Available,NoError,normal
-2025-12-11T21:57:35+00:00,1,Available,NoError,normal
-2025-12-11T21:57:35+00:00,1,Available,NoError,normal
-2025-12-11T21:57:35+00:00,1,Available,NoError,normal
-2025-12-11T21:57:35+00:00,1,Available,NoError,normal
-2025-12-11T21:57:35+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:35+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:35+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:35+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:35+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:35+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:35+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:36+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:36+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:36+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:36+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:36+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:36+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:36+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:36+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:36+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:36+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:36+00:00,1,Charging,NoError,normal
-2025-12-11T21:57:36+00:00,1,Preparing,NoError,normal
-2025-12-11T21:57:36+00:00,1,Charging,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
-2025-12-11T21:58:38+00:00,1,Finishing,NoError,normal
-2025-12-11T21:58:38+00:00,1,Available,NoError,normal
+timestamp,cp_id,connector_id,status,error_code,raw_payload
+2025-12-15T17:20:36+00:00,CP_001,1,Available,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:36+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:36+00:00,CP_002,1,Available,NoError,"{""cp_id"": ""CP_002"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:36+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:36+00:00,CP_003,1,Available,NoError,"{""cp_id"": ""CP_003"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:36+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:36+00:00,CP_004,1,Available,NoError,"{""cp_id"": ""CP_004"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:36+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_005,1,Available,NoError,"{""cp_id"": ""CP_005"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_006,1,Available,NoError,"{""cp_id"": ""CP_006"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_007,1,Available,NoError,"{""cp_id"": ""CP_007"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_008,1,Available,NoError,"{""cp_id"": ""CP_008"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_009,1,Available,NoError,"{""cp_id"": ""CP_009"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_010,1,Available,NoError,"{""cp_id"": ""CP_010"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_001,1,Preparing,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_001,1,Charging,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_002,1,Preparing,NoError,"{""cp_id"": ""CP_002"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_002,1,Charging,NoError,"{""cp_id"": ""CP_002"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:37+00:00,CP_003,1,Preparing,NoError,"{""cp_id"": ""CP_003"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:37+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_003,1,Charging,NoError,"{""cp_id"": ""CP_003"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_004,1,Preparing,NoError,"{""cp_id"": ""CP_004"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_004,1,Charging,NoError,"{""cp_id"": ""CP_004"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_005,1,Preparing,NoError,"{""cp_id"": ""CP_005"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_005,1,Charging,NoError,"{""cp_id"": ""CP_005"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_006,1,Preparing,NoError,"{""cp_id"": ""CP_006"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_006,1,Charging,NoError,"{""cp_id"": ""CP_006"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_007,1,Preparing,NoError,"{""cp_id"": ""CP_007"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_007,1,Charging,NoError,"{""cp_id"": ""CP_007"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_008,1,Preparing,NoError,"{""cp_id"": ""CP_008"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_008,1,Charging,NoError,"{""cp_id"": ""CP_008"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_009,1,Preparing,NoError,"{""cp_id"": ""CP_009"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_009,1,Charging,NoError,"{""cp_id"": ""CP_009"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_010,1,Preparing,NoError,"{""cp_id"": ""CP_010"", ""connector_id"": 1, ""status"": ""Preparing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:20:38+00:00,CP_010,1,Charging,NoError,"{""cp_id"": ""CP_010"", ""connector_id"": 1, ""status"": ""Charging"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:20:38+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_001,1,Finishing,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_001,1,Available,NoError,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_002,1,Finishing,NoError,"{""cp_id"": ""CP_002"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_002,1,Available,NoError,"{""cp_id"": ""CP_002"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_003,1,Finishing,NoError,"{""cp_id"": ""CP_003"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_003,1,Available,NoError,"{""cp_id"": ""CP_003"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_004,1,Finishing,NoError,"{""cp_id"": ""CP_004"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_004,1,Available,NoError,"{""cp_id"": ""CP_004"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_005,1,Finishing,NoError,"{""cp_id"": ""CP_005"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_005,1,Available,NoError,"{""cp_id"": ""CP_005"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_006,1,Finishing,NoError,"{""cp_id"": ""CP_006"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_006,1,Available,NoError,"{""cp_id"": ""CP_006"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_007,1,Finishing,NoError,"{""cp_id"": ""CP_007"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_007,1,Available,NoError,"{""cp_id"": ""CP_007"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_008,1,Finishing,NoError,"{""cp_id"": ""CP_008"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_008,1,Available,NoError,"{""cp_id"": ""CP_008"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_009,1,Finishing,NoError,"{""cp_id"": ""CP_009"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_009,1,Available,NoError,"{""cp_id"": ""CP_009"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_010,1,Finishing,NoError,"{""cp_id"": ""CP_010"", ""connector_id"": 1, ""status"": ""Finishing"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"
+2025-12-15T17:21:40+00:00,CP_010,1,Available,NoError,"{""cp_id"": ""CP_010"", ""connector_id"": 1, ""status"": ""Available"", ""error_code"": ""NoError"", ""timestamp"": ""2025-12-15T17:21:40+00:00"", ""payload"": {}, ""message_type"": ""StatusNotification""}"

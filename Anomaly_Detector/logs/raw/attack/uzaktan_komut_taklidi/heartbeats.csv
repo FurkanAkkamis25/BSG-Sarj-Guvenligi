@@ -1,66 +1,61 @@
-Timestamp,CP_ID,Label
-2025-12-11T22:00:50.375799,CP_005,attack_meta
-2025-12-11T22:00:50.375979,CP_003,attack_meta
-2025-12-11T22:00:50.376735,CP_002,attack_meta
-2025-12-11T22:00:50.376957,CP_004,attack_meta
-2025-12-11T22:00:50.377539,CP_001,attack_meta
-2025-12-11T22:00:52.920799,CP_009,attack_meta
-2025-12-11T22:00:52.920955,CP_010,attack_meta
-2025-12-11T22:00:52.921248,CP_006,attack_meta
-2025-12-11T22:00:52.922426,CP_008,attack_meta
-2025-12-11T22:00:52.922790,CP_007,attack_meta
-2025-12-11T22:01:00.397792,CP_003,attack_meta
-2025-12-11T22:01:00.398015,CP_005,attack_meta
-2025-12-11T22:01:00.398176,CP_002,attack_meta
-2025-12-11T22:01:00.399412,CP_004,attack_meta
-2025-12-11T22:01:00.399746,CP_001,attack_meta
-2025-12-11T22:01:02.934239,CP_008,attack_meta
-2025-12-11T22:01:02.934342,CP_009,attack_meta
-2025-12-11T22:01:02.934450,CP_006,attack_meta
-2025-12-11T22:01:02.934695,CP_010,attack_meta
-2025-12-11T22:01:02.934762,CP_007,attack_meta
-2025-12-11T22:01:10.413955,CP_005,attack_meta
-2025-12-11T22:01:10.414060,CP_004,attack_meta
-2025-12-11T22:01:10.414207,CP_003,attack_meta
-2025-12-11T22:01:10.414377,CP_002,attack_meta
-2025-12-11T22:01:10.414452,CP_001,attack_meta
-2025-12-11T22:01:12.946835,CP_008,attack_meta
-2025-12-11T22:01:12.946934,CP_009,attack_meta
-2025-12-11T22:01:12.947041,CP_006,attack_meta
-2025-12-11T22:01:12.947180,CP_007,attack_meta
-2025-12-11T22:01:12.947265,CP_010,attack_meta
-2025-12-11T22:01:20.421501,CP_005,attack_meta
-2025-12-11T22:01:20.421608,CP_004,attack_meta
-2025-12-11T22:01:20.421754,CP_002,attack_meta
-2025-12-11T22:01:20.421862,CP_001,attack_meta
-2025-12-11T22:01:20.421950,CP_003,attack_meta
-2025-12-11T22:01:22.967420,CP_006,attack_meta
-2025-12-11T22:01:22.967539,CP_010,attack_meta
-2025-12-11T22:01:22.967693,CP_007,attack_meta
-2025-12-11T22:01:22.967937,CP_008,attack_meta
-2025-12-11T22:01:22.968751,CP_009,attack_meta
-2025-12-11T22:01:30.432120,CP_002,attack_meta
-2025-12-11T22:01:30.432234,CP_003,attack_meta
-2025-12-11T22:01:30.432331,CP_005,attack_meta
-2025-12-11T22:01:30.432529,CP_004,attack_meta
-2025-12-11T22:01:30.432579,CP_001,attack_meta
-2025-12-11T22:01:32.976795,CP_006,attack_meta
-2025-12-11T22:01:32.977075,CP_010,attack_meta
-2025-12-11T22:01:32.977597,CP_007,attack_meta
-2025-12-11T22:01:32.978186,CP_008,attack_meta
-2025-12-11T22:01:32.993268,CP_009,attack_meta
-2025-12-11T22:01:40.438588,CP_002,attack_meta
-2025-12-11T22:01:40.438772,CP_003,attack_meta
-2025-12-11T22:01:40.438886,CP_004,attack_meta
-2025-12-11T22:01:40.439036,CP_005,attack_meta
-2025-12-11T22:01:40.439139,CP_001,attack_meta
-2025-12-11T22:01:42.985063,CP_010,attack_meta
-2025-12-11T22:01:42.985173,CP_006,attack_meta
-2025-12-11T22:01:42.985336,CP_007,attack_meta
-2025-12-11T22:01:42.985490,CP_008,attack_meta
-2025-12-11T22:01:42.998290,CP_009,attack_meta
-2025-12-11T22:01:50.458226,CP_003,attack_meta
-2025-12-11T22:01:50.458389,CP_002,attack_meta
-2025-12-11T22:01:50.458495,CP_001,attack_meta
-2025-12-11T22:01:50.458697,CP_005,attack_meta
-2025-12-11T22:01:50.459235,CP_004,attack_meta
+timestamp,cp_id,raw_payload
+2025-12-15T17:25:22.960599,CP_004,"{""cp_id"": ""CP_004"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:22.960599""}"
+2025-12-15T17:25:22.960801,CP_001,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:22.960801""}"
+2025-12-15T17:25:22.961305,CP_002,"{""cp_id"": ""CP_002"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:22.961305""}"
+2025-12-15T17:25:22.961595,CP_003,"{""cp_id"": ""CP_003"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:22.961595""}"
+2025-12-15T17:25:22.961887,CP_005,"{""cp_id"": ""CP_005"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:22.961887""}"
+2025-12-15T17:25:25.510146,CP_009,"{""cp_id"": ""CP_009"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:25.510146""}"
+2025-12-15T17:25:25.510278,CP_006,"{""cp_id"": ""CP_006"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:25.510278""}"
+2025-12-15T17:25:25.510390,CP_010,"{""cp_id"": ""CP_010"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:25.510390""}"
+2025-12-15T17:25:25.510497,CP_007,"{""cp_id"": ""CP_007"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:25.510497""}"
+2025-12-15T17:25:25.510726,CP_008,"{""cp_id"": ""CP_008"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:25.510726""}"
+2025-12-15T17:25:32.981083,CP_004,"{""cp_id"": ""CP_004"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:32.981083""}"
+2025-12-15T17:25:32.981235,CP_002,"{""cp_id"": ""CP_002"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:32.981235""}"
+2025-12-15T17:25:32.981454,CP_001,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:32.981454""}"
+2025-12-15T17:25:32.981582,CP_005,"{""cp_id"": ""CP_005"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:32.981582""}"
+2025-12-15T17:25:32.981820,CP_003,"{""cp_id"": ""CP_003"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:32.981820""}"
+2025-12-15T17:25:35.521194,CP_007,"{""cp_id"": ""CP_007"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:35.521194""}"
+2025-12-15T17:25:35.521740,CP_010,"{""cp_id"": ""CP_010"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:35.521740""}"
+2025-12-15T17:25:35.522080,CP_009,"{""cp_id"": ""CP_009"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:35.522080""}"
+2025-12-15T17:25:35.522299,CP_006,"{""cp_id"": ""CP_006"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:35.522299""}"
+2025-12-15T17:25:35.523103,CP_008,"{""cp_id"": ""CP_008"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:35.523103""}"
+2025-12-15T17:25:43.002156,CP_004,"{""cp_id"": ""CP_004"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:43.002156""}"
+2025-12-15T17:25:43.002341,CP_001,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:43.002341""}"
+2025-12-15T17:25:43.002637,CP_003,"{""cp_id"": ""CP_003"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:43.002637""}"
+2025-12-15T17:25:43.002747,CP_005,"{""cp_id"": ""CP_005"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:43.002747""}"
+2025-12-15T17:25:43.003105,CP_002,"{""cp_id"": ""CP_002"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:43.003105""}"
+2025-12-15T17:25:45.548312,CP_009,"{""cp_id"": ""CP_009"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:45.548312""}"
+2025-12-15T17:25:45.548523,CP_008,"{""cp_id"": ""CP_008"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:45.548523""}"
+2025-12-15T17:25:45.548663,CP_010,"{""cp_id"": ""CP_010"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:45.548663""}"
+2025-12-15T17:25:45.548760,CP_006,"{""cp_id"": ""CP_006"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:45.548760""}"
+2025-12-15T17:25:45.548850,CP_007,"{""cp_id"": ""CP_007"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:45.548850""}"
+2025-12-15T17:25:53.019771,CP_004,"{""cp_id"": ""CP_004"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:53.019771""}"
+2025-12-15T17:25:53.019895,CP_001,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:53.019895""}"
+2025-12-15T17:25:53.020119,CP_003,"{""cp_id"": ""CP_003"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:53.020119""}"
+2025-12-15T17:25:53.020561,CP_005,"{""cp_id"": ""CP_005"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:53.020561""}"
+2025-12-15T17:25:53.021509,CP_002,"{""cp_id"": ""CP_002"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:53.021509""}"
+2025-12-15T17:25:55.567338,CP_009,"{""cp_id"": ""CP_009"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:55.567338""}"
+2025-12-15T17:25:55.567464,CP_010,"{""cp_id"": ""CP_010"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:55.567464""}"
+2025-12-15T17:25:55.567602,CP_006,"{""cp_id"": ""CP_006"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:55.567602""}"
+2025-12-15T17:25:55.567723,CP_007,"{""cp_id"": ""CP_007"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:55.567723""}"
+2025-12-15T17:25:55.567899,CP_008,"{""cp_id"": ""CP_008"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:25:55.567899""}"
+2025-12-15T17:26:03.038671,CP_004,"{""cp_id"": ""CP_004"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:03.038671""}"
+2025-12-15T17:26:03.038885,CP_001,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:03.038885""}"
+2025-12-15T17:26:03.038957,CP_003,"{""cp_id"": ""CP_003"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:03.038957""}"
+2025-12-15T17:26:03.039047,CP_002,"{""cp_id"": ""CP_002"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:03.039047""}"
+2025-12-15T17:26:03.039147,CP_005,"{""cp_id"": ""CP_005"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:03.039147""}"
+2025-12-15T17:26:05.576881,CP_009,"{""cp_id"": ""CP_009"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:05.576881""}"
+2025-12-15T17:26:05.577009,CP_010,"{""cp_id"": ""CP_010"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:05.577009""}"
+2025-12-15T17:26:05.577133,CP_008,"{""cp_id"": ""CP_008"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:05.577133""}"
+2025-12-15T17:26:05.577229,CP_007,"{""cp_id"": ""CP_007"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:05.577229""}"
+2025-12-15T17:26:05.577385,CP_006,"{""cp_id"": ""CP_006"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:05.577385""}"
+2025-12-15T17:26:13.053443,CP_004,"{""cp_id"": ""CP_004"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:13.053443""}"
+2025-12-15T17:26:13.053676,CP_001,"{""cp_id"": ""CP_001"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:13.053676""}"
+2025-12-15T17:26:13.053800,CP_003,"{""cp_id"": ""CP_003"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:13.053800""}"
+2025-12-15T17:26:13.053897,CP_005,"{""cp_id"": ""CP_005"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:13.053897""}"
+2025-12-15T17:26:13.054000,CP_002,"{""cp_id"": ""CP_002"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:13.054000""}"
+2025-12-15T17:26:15.595569,CP_010,"{""cp_id"": ""CP_010"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:15.595569""}"
+2025-12-15T17:26:15.595720,CP_007,"{""cp_id"": ""CP_007"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:15.595720""}"
+2025-12-15T17:26:15.595930,CP_008,"{""cp_id"": ""CP_008"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:15.595930""}"
+2025-12-15T17:26:15.596059,CP_006,"{""cp_id"": ""CP_006"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:15.596059""}"
+2025-12-15T17:26:15.596183,CP_009,"{""cp_id"": ""CP_009"", ""payload"": {}, ""message_type"": ""Heartbeat"", ""timestamp"": ""2025-12-15T17:26:15.596183""}"

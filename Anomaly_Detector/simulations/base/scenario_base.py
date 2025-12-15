@@ -38,52 +38,75 @@ class ScenarioBase(ABC):
 
     # --- CSMS log tabloları için kolon setleri ---
     # 🔴 SCRUM MASTER GEREKSİNİMİ: Tüm CSV'lerde standart format
+    
+    # Birleştirilmiş OCPP log (tüm mesajlar tek dosyada)
+    OCPP_FIELDNAMES = [
+        "timestamp",
+        "charge_point_id",
+        "scenario",
+        "mode",
+        "step",
+        "message_type",
+        "transaction_id",
+        "connector_id",
+        "id_tag",
+        "power_kw",
+        "current_a",
+        "voltage_v",
+        "soc_percent",
+        "label",
+        "raw_payload",
+    ]
 
-    # Sayaç / ölçüm verisi (AI eğitimi için ana dataset)
+    # Sayaç / ölçüm verisi (raw klasörü)
     METER_FIELDNAMES = [
-        "Timestamp",           # Büyük T
-        "Transaction_ID",      # Alt çizgili, büyük harfler
-        "Voltage",             # Kısaltılmış
-        "Current_Import",      # İsim değişti
-        "Power_Import",        # İsim değişti
-        "SoC",                 # Kısaltılmış
-        "Label",               # YENİ - anomaly label
+        "timestamp",
+        "cp_id",
+        "transaction_id",
+        "connector_id",
+        "power_kw",
+        "current_a",
+        "voltage_v",
+        "soc_percent",
+        "raw_payload",
     ]
 
     # Durum değişimleri
     STATUS_FIELDNAMES = [
-        "Timestamp",
-        "Connector_ID",
-        "Status",
-        "Error_Code",
-        "Label",
+        "timestamp",
+        "cp_id",
+        "connector_id",
+        "status",
+        "error_code",
+        "raw_payload",
     ]
 
     # Heartbeat / health
     HEARTBEAT_FIELDNAMES = [
-        "Timestamp",
-        "CP_ID",
-        "Label",
+        "timestamp",
+        "cp_id",
+        "raw_payload",
     ]
 
     # Start / StopTransaction
     TRANSACTION_FIELDNAMES = [
-        "Timestamp",
-        "Event_Type",          # StartTransaction / StopTransaction
-        "Transaction_ID",
-        "ID_Tag",
-        "Meter_Start",
-        "Meter_Stop",
-        "Reason",
-        "Label",
+        "timestamp",
+        "cp_id",
+        "event_type",
+        "transaction_id",
+        "id_tag",
+        "meter_start",
+        "meter_stop",
+        "reason",
+        "raw_payload",
     ]
 
     # Ham event tablosu (audit / debug)
     RAW_EVENT_FIELDNAMES = [
-        "Timestamp",
-        "CP_ID",
-        "Message_Type",
-        "Label",
+        "timestamp",
+        "cp_id",
+        "message_type",
+        "raw_payload",
     ]
 
     def __init__(self, config: ScenarioConfig) -> None:
@@ -94,11 +117,11 @@ class ScenarioBase(ABC):
         self._csms_task: Optional[asyncio.Task] = None
         self._cps: List[SimulatedChargePoint] = []
 
-        # Eski tek CSV (birleşik dataset)
-        self._csv_file = None
-        self._csv_writer: Optional[csv.DictWriter] = None
+        # Birleşik OCPP CSV (logs/ocpp/)
+        self._ocpp_file = None
+        self._ocpp_writer: Optional[csv.DictWriter] = None
 
-        # Gerçek log tabloları
+        # Raw log tabloları (logs/raw/)
         self._mv_file = None
         self._mv_writer: Optional[csv.DictWriter] = None
 
@@ -150,7 +173,20 @@ class ScenarioBase(ABC):
         self._step_counter = 0
 
         # --------------------------------------------------------------
-        # 1) CSMS logları (çoklu CSV)
+        # 1) Birleşik OCPP log (logs/ocpp/)
+        # --------------------------------------------------------------
+        ocpp_dir = Path("logs") / "ocpp"
+        ocpp_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Dosya adı: senaryo_mode_timestamp.csv
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        ocpp_path = ocpp_dir / f"{self.config.name}_{mode}_{timestamp_str}.csv"
+        self._ocpp_file = ocpp_path.open("w", newline="", encoding="utf-8")
+        self._ocpp_writer = csv.DictWriter(self._ocpp_file, fieldnames=self.OCPP_FIELDNAMES)
+        self._ocpp_writer.writeheader()
+
+        # --------------------------------------------------------------
+        # 2) Raw loglar (logs/raw/)
         # --------------------------------------------------------------
         # Raw log klasör yapısı:
         #   logs/raw/{normal|attack}/{scenario_name}/
@@ -311,6 +347,7 @@ class ScenarioBase(ABC):
     def _close_all_csv_files(self) -> None:
         """Tüm CSV dosyalarını güvenli şekilde kapat."""
         for f in [
+            self._ocpp_file,
             self._mv_file,
             self._status_file,
             self._hb_file,
@@ -323,6 +360,7 @@ class ScenarioBase(ABC):
             except Exception:
                 pass
 
+        self._ocpp_file = None
         self._mv_file = None
         self._status_file = None
         self._hb_file = None
@@ -346,138 +384,168 @@ class ScenarioBase(ABC):
         # CSMS logları
         self._log_realistic(message_type, event)
 
-    # simulations/base/scenario_base.py
-
     def _log_realistic(self, message_type: str, raw_event: Dict[str, Any]) -> None:
-        """Gerçek CSMS tablolarına karşılık gelen CSV'lere yazar."""
+        """
+        Gerçek CSMS tablolarına karşılık gelen CSV'lere yazar.
+        Hem birleşik OCPP log'una hem de ayrı raw CSV'lere yazar.
+        """
         event = dict(raw_event)
         ts = event.get("timestamp") or _utc_now_iso()
         cp_id = event.get("cp_id")
         
-        # 🔴 Label hesapla (her event için gerekli)
+        # Step counter'ı artır
+        self._step_counter += 1
+        
+        # Label hesapla (Scrum Master formatında "normal" veya spesifik attack label'ı)
         label = self.get_label_for_event(event, mode=self._mode)
-
-        # 1) Ham event tablosu (her şey buraya da gider)
+        
+        # raw_payload oluştur (JSON string)
+        raw_payload = json.dumps(event)
+        
+        # Ortak alanlar
+        transaction_id = event.get("transaction_id", "")
+        connector_id = event.get("connector_id", "")
+        id_tag = event.get("id_tag", "")
+        
+        # MeterValues için değerler
+        power_kw = ""
+        current_a = ""
+        voltage_v = ""
+        soc_percent = ""
+        
+        if message_type == "MeterValues":
+            meter_value = event.get("meter_value", [])
+            try:
+                if isinstance(meter_value, list) and meter_value:
+                    first_mv = meter_value[0]
+                    if isinstance(first_mv, dict):
+                        sampled_values = first_mv.get("sampledValue") or first_mv.get("sampled_value") or []
+                    else:
+                        sampled_values = getattr(first_mv, "sampledValue", None) or getattr(first_mv, "sampled_value", None) or []
+                    
+                    for sv in sampled_values:
+                        if isinstance(sv, dict):
+                            meas = sv.get("measurand")
+                            val_str = sv.get("value")
+                        else:
+                            meas = getattr(sv, "measurand", None)
+                            val_str = getattr(sv, "value", None)
+                        
+                        if val_str is None:
+                            continue
+                        
+                        try:
+                            val = float(val_str)
+                        except (TypeError, ValueError):
+                            continue
+                        
+                        if meas == "Power.Active.Import":
+                            power_kw = val
+                        elif meas == "Current.Import":
+                            current_a = val
+                        elif meas == "Voltage":
+                            voltage_v = val
+                        elif meas in ("SoC", "StateOfCharge"):
+                            soc_percent = val
+            except Exception:
+                pass
+        
+        # --------------------------------------------------------------
+        # 1) BİRLEŞİK OCPP CSV (TÜM MESAJLAR)
+        # --------------------------------------------------------------
+        if self._ocpp_writer is not None:
+            ocpp_row = {
+                "timestamp": ts,
+                "charge_point_id": cp_id or "",
+                "scenario": self.config.name,
+                "mode": self._mode,
+                "step": self._step_counter,
+                "message_type": message_type,
+                "transaction_id": transaction_id,
+                "connector_id": connector_id,
+                "id_tag": id_tag,
+                "power_kw": power_kw,
+                "current_a": current_a,
+                "voltage_v": voltage_v,
+                "soc_percent": soc_percent,
+                "label": label,
+                "raw_payload": raw_payload,
+            }
+            self._ocpp_writer.writerow(ocpp_row)
+            if self._ocpp_file is not None:
+                self._ocpp_file.flush()
+        
+        # --------------------------------------------------------------
+        # 2) RAW CSV'LER (MESAJ TİPİNE GÖRE)
+        # --------------------------------------------------------------
+        
+        # 2a) Ham event tablosu
         if self._raw_writer is not None:
-            self._raw_writer.writerow(
-                {
-                    "Timestamp": ts,
-                    "CP_ID": cp_id,
-                    "Message_Type": message_type,
-                    "Label": label,
-                }
-            )
+            self._raw_writer.writerow({
+                "timestamp": ts,
+                "cp_id": cp_id or "",
+                "message_type": message_type,
+                "raw_payload": raw_payload,
+            })
             if self._raw_file is not None:
                 self._raw_file.flush()
-
-        # 2) Mesaj tipine göre ayrı tablolar
+        
+        # 2b) Heartbeat
         if message_type == "Heartbeat":
-            # 👉 HEARTBEAT'LER BURAYA DÜŞÜYOR
             if self._hb_writer is not None:
-                self._hb_writer.writerow(
-                    {
-                        "Timestamp": ts,
-                        "CP_ID": cp_id,
-                        "Label": label,
-                    }
-                )
+                self._hb_writer.writerow({
+                    "timestamp": ts,
+                    "cp_id": cp_id or "",
+                    "raw_payload": raw_payload,
+                })
                 if self._hb_file is not None:
                     self._hb_file.flush()
-
+        
+        # 2c) StatusNotification
         elif message_type == "StatusNotification":
             if self._status_writer is not None:
-                row = {
-                    "Timestamp": ts,
-                    "Connector_ID": event.get("connector_id"),
-                    "Status": event.get("status"),
-                    "Error_Code": event.get("error_code"),
-                    "Label": label,
-                }
-                self._status_writer.writerow(row)
+                self._status_writer.writerow({
+                    "timestamp": ts,
+                    "cp_id": cp_id or "",
+                    "connector_id": connector_id,
+                    "status": event.get("status", ""),
+                    "error_code": event.get("error_code", ""),
+                    "raw_payload": raw_payload,
+                })
                 if self._status_file is not None:
                     self._status_file.flush()
-
+        
+        # 2d) MeterValues
         elif message_type == "MeterValues":
             if self._mv_writer is not None:
-                power_kw: Optional[float] = None
-                current_a: Optional[float] = None
-                voltage_v: Optional[float] = None
-                soc_percent: Optional[float] = None
-
-                meter_value = event.get("meter_value", [])
-
-                try:
-                    if isinstance(meter_value, list) and meter_value:
-                        first_mv = meter_value[0]
-
-                        if isinstance(first_mv, dict):
-                            sampled_values = (
-                                first_mv.get("sampledValue")
-                                or first_mv.get("sampled_value")
-                                or []
-                            )
-                        else:
-                            sampled_values = (
-                                getattr(first_mv, "sampledValue", None)
-                                or getattr(first_mv, "sampled_value", None)
-                                or []
-                            )
-
-                        for sv in sampled_values:
-                            if isinstance(sv, dict):
-                                meas = sv.get("measurand")
-                                val_str = sv.get("value")
-                            else:
-                                meas = getattr(sv, "measurand", None)
-                                val_str = getattr(sv, "value", None)
-
-                            if val_str is None:
-                                continue
-
-                            try:
-                                val = float(val_str)
-                            except (TypeError, ValueError):
-                                continue
-
-                            if meas == "Power.Active.Import":
-                                power_kw = val
-                            elif meas == "Current.Import":
-                                current_a = val
-                            elif meas == "Voltage":
-                                voltage_v = val
-                            elif meas in ("SoC", "StateOfCharge"):
-                                soc_percent = val
-                except Exception:
-                    # Log kırılmasın diye yutuyoruz
-                    pass
-
-                # 🔴 YENİ FORMAT: Scrum Master gereksinimleri
-                row = {
-                    "Timestamp": ts,
-                    "Transaction_ID": event.get("transaction_id"),
-                    "Voltage": voltage_v,
-                    "Current_Import": current_a,
-                    "Power_Import": power_kw,
-                    "SoC": soc_percent,
-                    "Label": label,
-                }
-                self._mv_writer.writerow(row)
+                self._mv_writer.writerow({
+                    "timestamp": ts,
+                    "cp_id": cp_id or "",
+                    "transaction_id": transaction_id,
+                    "connector_id": connector_id,
+                    "power_kw": power_kw,
+                    "current_a": current_a,
+                    "voltage_v": voltage_v,
+                    "soc_percent": soc_percent,
+                    "raw_payload": raw_payload,
+                })
                 if self._mv_file is not None:
                     self._mv_file.flush()
-
+        
+        # 2e) StartTransaction / StopTransaction
         elif message_type in ("StartTransaction", "StopTransaction"):
             if self._tx_writer is not None:
-                row = {
-                    "Timestamp": ts,
-                    "Event_Type": message_type,
-                    "Transaction_ID": event.get("transaction_id"),
-                    "ID_Tag": event.get("id_tag"),
-                    "Meter_Start": event.get("meter_start"),
-                    "Meter_Stop": event.get("meter_stop"),
-                    "Reason": event.get("reason"),
-                    "Label": label,
-                }
-                self._tx_writer.writerow(row)
+                self._tx_writer.writerow({
+                    "timestamp": ts,
+                    "cp_id": cp_id or "",
+                    "event_type": message_type,
+                    "transaction_id": transaction_id,
+                    "id_tag": id_tag,
+                    "meter_start": event.get("meter_start", ""),
+                    "meter_stop": event.get("meter_stop", ""),
+                    "reason": event.get("reason", ""),
+                    "raw_payload": raw_payload,
+                })
                 if self._tx_file is not None:
                     self._tx_file.flush()
 
