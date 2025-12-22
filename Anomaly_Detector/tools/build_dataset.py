@@ -11,7 +11,7 @@ import pandas as pd
 # ------------------------------------------------------------------------------
 
 # logs klasörünün kökü (projenin kökünden çalıştırdığını varsayıyorum)
-LOGS_ROOT = Path("logs")
+LOGS_ROOT = Path(__file__).parent.parent / "logs"
 
 # OCPP loglarının olduğu klasör
 OCPP_DIR = LOGS_ROOT / "ocpp"
