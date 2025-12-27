@@ -6,3 +6,8 @@ certs/*.pfx
 
 # allow README  readme dosyasına izin ver açıklama için
 !certs/README.md
+
+# Python cache & system files
+__pycache__/
+*.pyc
+.DS_Store
