@@ -1,0 +1,2 @@
+timestamp,cp_id,event_type,transaction_id,id_tag,meter_start,meter_stop,reason,raw_payload
+2025-12-27T14:47:52+00:00,CP_001,StartTransaction,1,YUNUS_TAG,0,,,"{""cp_id"": ""CP_001"", ""connector_id"": 1, ""id_tag"": ""YUNUS_TAG"", ""meter_start"": 0, ""timestamp"": ""2025-12-27T14:47:52+00:00"", ""transaction_id"": 1, ""authorized"": true, ""payload"": {}, ""message_type"": ""StartTransaction""}"

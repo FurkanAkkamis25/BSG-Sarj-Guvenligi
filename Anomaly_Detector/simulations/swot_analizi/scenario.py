@@ -50,7 +50,7 @@ class SwotAnaliziScenario(ScenarioBase):
                 id_tag=id_tag,
                 meter_start=0,
             )
-            tx_ids[cp.id] = start_res.transaction_id.strip()
+            tx_ids[cp.id] = start_res.transaction_id
 
             await cp.send_status_notification(
                 connector_id=connector_id,
