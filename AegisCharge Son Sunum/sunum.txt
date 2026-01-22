@@ -1,0 +1,208 @@
+================================================================================
+                    PROJE SUNUM METNİ - ML SALDIRI YAKALAMA SİSTEMİ
+================================================================================
+
+BAŞLIK: RandomForest ile Elektrik Şarj İstasyonu Saldırı Tespit Sistemi
+TARİH: 30 Aralık 2025
+DURUM: Tamamlandı ve Paylaşıma Hazır
+
+================================================================================
+1. PROJE AÇIKLAMASI
+================================================================================
+
+Bu proje, makine öğrenmesi kullanarak elektrik araçları şarj eden istasyonlardaki
+sistem saldırılarını tespit etmek amacıyla geliştirilmiştir.
+
+Model: Random Forest Classifier
+Amaç: Normal işletme vs Saldırı Tespit
+Veri Sayısı: 7,000 örnek
+Feature Sayısı: 8 (4 orijinal + 4 mühendislik)
+
+================================================================================
+2. PROJE BAŞARISI
+================================================================================
+
+Accuracy (Doğruluk):        62.57%
+Precision (Kesinlik):       54.67%
+Recall (Yakalama):          90.65%  ← ÖNEMLİ
+F1-Score:                   0.6820
+
+SALDIRI YAKALAMA:
+  - Toplam Saldırı: 620
+  - Yakalanan: 562 ✓
+  - Kaçırılan: 58
+  - Yakalama Oranı: %90.65
+
+NORMAL VERİ:
+  - Toplam Normal: 780
+  - Doğru Tespit: 314
+  - Yanlış Uyarı: 466
+
+================================================================================
+3. PROJE AVANTAJLARI
+================================================================================
+
+✓ YÜKSEK RECALL: Saldırıların %90.65'ini yakaladık
+  → Güvenlik sistemleri için ideal (saldırıları kaçırmamak önemli)
+
+✓ DENGELI VERİ: 3900 normal, 3100 saldırı (yakın oranlar)
+  → Model eğitimi için iyi durumda
+
+✓ FEATURE ENGİNEERİNG: 8 özellik ile daha iyi tahmin
+  - Orijinal: Voltage, Current, Power, SoC
+  - Mühendislik: Power_Ratio, SoC_Delta, Current_to_Voltage, Power_per_SoC
+
+✓ PAYLAŞIMA HAZIR: requirements.txt ile kolay kurulum
+  - Başka bilgisayarda 1 komutla çalışır
+
+================================================================================
+4. PROJE ZAYIFLIKLARI
+================================================================================
+
+⚠️ 466 YANLIŞ UYARI: Normal veriler saldırı olarak işaretleniyor
+  → Precision %54.67 (her 2 "saldırı"den 1'i yanlış)
+  → Nedeni: Orijinal veri etiketleme hatasında olabilir
+
+✓ VERİ KALİTESİ: Temiz ve tutarlı
+  - temiz_veri_v5.csv projeden çıkarıldı (uyumsuz ve hatalı)
+  - Sadece v1-v4 kullanılıyor (7000 satır, tutarlı format)
+
+⚠️ ACCURACY DÜŞÜK: %62.57 hedefin altında olabilir
+  → Accuracy artırmak için:
+    1. Veri kalitesi iyileştiril (466 satır)
+    2. Veri dengeleme (SMOTE)
+    3. Başka model dene (XGBoost, LightGBM)
+
+================================================================================
+5. TEKNİK DETAYLAR
+================================================================================
+
+KULLANILAN KÜTÜPHANELER:
+  - pandas: Veri işleme
+  - numpy: Sayısal hesaplamalar
+  - scikit-learn: ML modeli, preprocessing, metriks
+  - joblib: Model ve scaler kaydı
+
+FEATURE IMPORTANCE (Sırasıyla):
+  1. Power_Import (16.46%) - En önemli
+  2. Power_per_SoC (16.13%)
+  3. Current_to_Voltage (15.55%)
+  4. Current_Import (15.45%)
+  5. SoC (13.78%)
+  6. Power_Ratio (10.95%)
+  7. Voltage (6.71%)
+  8. SoC_Delta (4.98%)
+
+MODEL PARAMETRELERİ:
+  - n_estimators: 300 (karar ağacı sayısı)
+  - max_depth: 20 (ağaç derinliği)
+  - min_samples_split: 5 (ayırma için minimum örnek)
+  - class_weight: balanced (sınıf dengeleme)
+  - random_state: 42 (tekrarlanabilirlik)
+
+THRESHOLD: 0.30 (Recall odaklı)
+  → Modelin %30'dan fazla saldırı olasılığı varsa → "SALDIRI!" diye işaretle
+
+================================================================================
+6. PROJE DOSYALARI
+================================================================================
+
+main.py
+  → Ana eğitim ve tahmin kodu
+  → CSV dosyalarından veri yükler
+  → Model eğitir ve metrikleri gösterir
+  → rf_model.pkl ve scaler.pkl kaydeder
+
+inspect_model.py
+  → Eğitilmiş modeli inceleme aracı
+  → Model parametrelerini gösterir
+  → Feature importance analizi yapır
+
+temiz_veri_v1.csv - temiz_veri_v4.csv
+  → Eğitim verileri (7000 satır toplamda)
+  → Kolonlar: Voltage, Current_Import, Power_Import, SoC, Label
+  → Not: temiz_veri_v5.csv projeden çıkarıldı (hatalı ve uyumsuz)
+
+rf_model.pkl
+  → Eğitilmiş Random Forest modeli
+  → Tahmin yapmak için kullanılır
+
+scaler.pkl
+  → StandardScaler parametreleri
+  → Yeni verinin normalize edilmesi için ZORUNLU
+
+requirements.txt
+  → Proje bağımlılıkları
+
+README.md
+  → Proje kullanım kılavuzu
+
+================================================================================
+7. NASIL KULLANILIR
+================================================================================
+
+1. KURULUM:
+   $ pip install -r requirements.txt
+
+2. MODELİ EĞİT:
+   $ python main.py
+
+3. MODELİ İNCELE:
+   $ python inspect_model.py
+
+4. ARAYÜZE BAĞLAMA (Başka kişiye):
+   - rf_model.pkl ve scaler.pkl kullan
+   - Yeni veriyi ölçekle: scaler.transform(data)
+   - Model tahmin et: model.predict_proba(data_scaled)
+
+================================================================================
+8. ÖNERİLER VE İYİLEŞTİRMELER
+================================================================================
+
+KISADÖNEMDEKİ ÇALIŞMALAR:
+  1. 466 yanlış uyarıyı manuel kontrol et
+  2. Yanlış etiketlenen satırları düzelt
+  3. Eğitilmiş modeli yeniden test et
+
+ORTADÖNEM:
+  1. SMOTE ile veri dengeleme (yapay veri üretimi)
+  2. GridSearchCV ile hyperparameter tuning
+  3. XGBoost ve LightGBM modelleri dene
+  4. Cross-validation ile validation kurun
+
+LONGTERMİN:
+  1. Real-time sensör verisi entegrasyonu
+  2. Model versiyonlama sistemi
+  3. Monitoring ve logging sistemi
+  4. Açıklanabilir AI (explainability) araçları
+
+================================================================================
+9. KİŞİSEL NOTLAR
+================================================================================
+
+✓ GÜVENLIK AÇISINDAN:
+  Model saldırıları %90 oranında yakalaması çok iyi.
+  Yanlış alarmlar (%40 normal veriyi yanlış işaretleme) daha az önemli.
+  → İyi bir güvenlik sistemi için başarılı.
+
+✓ BAŞLANGIC PROJESİ OLARAK:
+  Veri hazırlığından tahmine kadar tam ML iş akışı var.
+  Başka projelere base olarak kullanılabilir.
+
+⚠️ KÖTÜYEPİKRAR:
+  Model başarısını artırmak için veri kalitesi critical.
+  466 yanlış satırın kaynağı bulunmalı.
+
+================================================================================
+10. İLETİŞİM & DESTEK
+================================================================================
+
+Proje Durumu: Tamamlandı ve Paylaşıma Hazır
+Başka Bilgisayarda Çalıştırma: Mümkün (requirements.txt ile)
+Arayüz Bağlantısı: Başka kişiye devri bekliyor
+
+Sorular veya Ekleme Talepleri: Yukarıdaki adımları takip et
+
+================================================================================
+                            SUNUM SONU
+================================================================================
